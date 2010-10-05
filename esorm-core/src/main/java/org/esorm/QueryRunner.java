@@ -16,13 +16,13 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with EsORM.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.github.tivv.esorm;
+package org.esorm;
 
 /**
  * @author Vitalii Tymchyshyn
  *
  */
-public class QueryConf implements QueryRunner
+public interface QueryRunner
 {
 
 }
