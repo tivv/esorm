@@ -18,12 +18,16 @@
  */
 package org.esorm;
 
+import java.sql.Connection;
+import java.sql.SQLException;
+
 /**
  * @author Vitalii Tymchyshyn
  *
  */
-public interface QueryRunner
+public interface ConnectionProvider
 {
-    public ErrorHandler getErrorHandler();
-    public ConnectionProvider getConnectionProvider();
+    Connection takeConnection() throws SQLException;
+    void returnConnection(Connection con) throws SQLException;
+
 }

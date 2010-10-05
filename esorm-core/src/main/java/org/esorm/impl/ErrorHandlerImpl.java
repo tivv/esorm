@@ -16,14 +16,16 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with EsORM.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.esorm;
+package org.esorm.impl;
+
+import org.esorm.ErrorHandler;
 
 /**
  * @author Vitalii Tymchyshyn
  *
  */
-public interface QueryRunner
+public class ErrorHandlerImpl
+implements ErrorHandler
 {
-    public ErrorHandler getErrorHandler();
-    public ConnectionProvider getConnectionProvider();
+    public static final ErrorHandlerImpl INSTANCE = new ErrorHandlerImpl();
 }

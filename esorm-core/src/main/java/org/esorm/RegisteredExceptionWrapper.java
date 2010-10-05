@@ -22,8 +22,24 @@ package org.esorm;
  * @author Vitalii Tymchyshyn
  *
  */
-public interface QueryRunner
+public class RegisteredExceptionWrapper
+extends RuntimeException
 {
-    public ErrorHandler getErrorHandler();
-    public ConnectionProvider getConnectionProvider();
+    /**
+     * @param cause
+     */
+    public RegisteredExceptionWrapper(Throwable cause)
+    {
+        super(cause);
+    }
+
+    /**
+     * @param message
+     * @param cause
+     */
+    public RegisteredExceptionWrapper(String message, Throwable cause)
+    {
+        super(message, cause);
+    }
+
 }

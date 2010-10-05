@@ -18,12 +18,17 @@
  */
 package org.esorm;
 
+import java.sql.Connection;
+
+import org.esorm.impl.FixedConnectionProvider;
+
 /**
  * @author Vitalii Tymchyshyn
  *
  */
-public interface QueryRunner
+public class EsormUtils
 {
-    public ErrorHandler getErrorHandler();
-    public ConnectionProvider getConnectionProvider();
+    public static ConnectionProvider connect(Connection con) {
+        return new FixedConnectionProvider(con);
+    }
 }

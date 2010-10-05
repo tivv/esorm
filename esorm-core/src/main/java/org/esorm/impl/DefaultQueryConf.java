@@ -16,14 +16,31 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with EsORM.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.esorm;
+package org.esorm.impl;
+
+import org.esorm.*;
 
 /**
  * @author Vitalii Tymchyshyn
  *
  */
-public interface QueryRunner
+public class DefaultQueryConf
+implements QueryRunner
 {
-    public ErrorHandler getErrorHandler();
-    public ConnectionProvider getConnectionProvider();
+    public static final DefaultQueryConf INSTANCE = new DefaultQueryConf();
+    
+    private DefaultQueryConf() {
+        
+    }
+
+    public ErrorHandler getErrorHandler()
+    {
+        return ErrorHandlerImpl.INSTANCE;
+    }
+
+    public ConnectionProvider getConnectionProvider()
+    {
+        throw new UnsupportedOperationException("There is no default ConnectionProvider. Please supply one with setConnectionProvider method");
+    }
+
 }

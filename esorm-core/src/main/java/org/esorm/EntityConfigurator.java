@@ -22,8 +22,7 @@ package org.esorm;
  * @author Vitalii Tymchyshyn
  *
  */
-public interface QueryRunner
+public interface EntityConfigurator
 {
-    public ErrorHandler getErrorHandler();
-    public ConnectionProvider getConnectionProvider();
+
 }

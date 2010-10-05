@@ -18,11 +18,63 @@
  */
 package org.esorm;
 
+import org.esorm.impl.DefaultQueryConf;
+
 /**
  * @author Vitalii Tymchyshyn
  *
  */
 public class QueryConf implements QueryRunner
 {
+    private final QueryRunner parent;
+    private ErrorHandler errorHandler;
+    private ConnectionProvider connectionProvider;
+    
+    public QueryConf() 
+    {
+        this((ErrorHandler)null);
+    }
 
+    public QueryConf(ErrorHandler errorHandler)
+    {
+        this(DefaultQueryConf.INSTANCE, errorHandler);
+    }
+
+    public QueryConf(QueryRunner parent)
+    {
+        this(parent, null);
+    }
+    
+    public QueryConf(QueryRunner parent, ErrorHandler errorHandler)
+    {
+        this.parent = parent;
+        this.errorHandler = errorHandler;
+    }
+
+    public ErrorHandler getErrorHandler()
+    {
+        return errorHandler == null ? parent.getErrorHandler() : errorHandler;
+    }
+
+    public void setErrorHandler(ErrorHandler errorHandler)
+    {
+        this.errorHandler = errorHandler;
+    }
+
+    public ConnectionProvider getConnectionProvider()
+    {
+        return connectionProvider == null ? parent.getConnectionProvider() : connectionProvider;
+    }
+
+    public void setConnectionProvider(ConnectionProvider connectionProvider)
+    {
+        this.connectionProvider = connectionProvider;
+    }
+
+    public QueryRunner getParent()
+    {
+        return parent;
+    }
+    
+    
 }
