@@ -18,6 +18,8 @@
  */
 package org.esorm;
 
+import java.util.List;
+
 import org.esorm.impl.DefaultQueryConf;
 
 /**
@@ -29,6 +31,8 @@ public class QueryConf implements QueryRunner
     private final QueryRunner parent;
     private ErrorHandler errorHandler;
     private ConnectionProvider connectionProvider;
+    private List<EntityConfigurator> entityConfigurators;
+    private List<EntityManager> entityManagers;
     
     public QueryConf() 
     {
@@ -60,6 +64,11 @@ public class QueryConf implements QueryRunner
     {
         this.errorHandler = errorHandler;
     }
+    
+    public QueryConf errorHandler(ErrorHandler errorHandler) {
+        setErrorHandler(errorHandler);
+        return this;
+    }
 
     public ConnectionProvider getConnectionProvider()
     {
@@ -70,11 +79,14 @@ public class QueryConf implements QueryRunner
     {
         this.connectionProvider = connectionProvider;
     }
+    
+    public QueryConf connectionProvider(ConnectionProvider connectionProvider) {
+        setConnectionProvider(connectionProvider);
+        return this;
+    }
 
     public QueryRunner getParent()
     {
         return parent;
     }
-    
-    
 }
