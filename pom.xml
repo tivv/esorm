@@ -6,5 +6,7 @@
   <packaging>pom</packaging>
   <modules>
   	<module>esorm-core</module>
+  	<module>esorm-jpa</module>
+  	<module>esorm-all</module>
   </modules>
 </project>
