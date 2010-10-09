@@ -22,7 +22,15 @@ package org.esorm;
  * @author Vitalii Tymchyshyn
  *
  */
-public class EntityManager
+public interface DataAccessor
 {
+
+    /**
+     * @param queryConf
+     * @param description
+     * @param id
+     * @return
+     */
+    <T> T get(QueryRunner queryRunner, EntityDescription description, Object id);
 
 }

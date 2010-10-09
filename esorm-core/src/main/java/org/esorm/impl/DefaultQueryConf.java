@@ -43,4 +43,12 @@ implements QueryRunner
         throw new UnsupportedOperationException("There is no default ConnectionProvider. Please supply one with setConnectionProvider method");
     }
 
+    /* (non-Javadoc)
+     * @see org.esorm.QueryRunner#getDataAccessor()
+     */
+    public DataAccessor getDataAccessor()
+    {
+        return DataAccessorImpl.INSTANCE;
+    }
+
 }

@@ -22,7 +22,7 @@ package org.esorm;
  * @author Vitalii Tymchyshyn
  *
  */
-public interface EntityConfigurator
+public interface EntitiesManager
 {
 
 }

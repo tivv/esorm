@@ -4,6 +4,15 @@
   <artifactId>esorm</artifactId>
   <version>0.0.1-SNAPSHOT</version>
   <packaging>pom</packaging>
+  <dependencyManagement>
+  	<dependencies>
+  		<dependency>
+  			<groupId>org.jcloudlet</groupId>
+  			<artifactId>jcloudlet-bean-core</artifactId>
+  			<version>1.0-SNAPSHOT</version>
+  		</dependency>
+  	</dependencies>
+  </dependencyManagement>
   <modules>
   	<module>esorm-core</module>
   	<module>esorm-jpa</module>

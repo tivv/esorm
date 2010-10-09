@@ -25,4 +25,9 @@ package org.esorm;
 public interface ErrorHandler
 {
 
+    /**
+     * @param e
+     */
+    void handle(Exception e);
+
 }

@@ -18,6 +18,7 @@
  */
 package org.esorm;
 
+import java.sql.Connection;
 import java.util.List;
 
 import org.esorm.impl.DefaultQueryConf;
@@ -31,8 +32,9 @@ public class QueryConf implements QueryRunner
     private final QueryRunner parent;
     private ErrorHandler errorHandler;
     private ConnectionProvider connectionProvider;
-    private List<EntityConfigurator> entityConfigurators;
-    private List<EntityManager> entityManagers;
+    private DataAccessor dataAccessor;
+    private List<EntitiesConfigurator> entityConfigurators;
+    private List<EntitiesManager> entityManagers;
     
     public QueryConf() 
     {
@@ -85,8 +87,45 @@ public class QueryConf implements QueryRunner
         return this;
     }
 
+    public DataAccessor getDataAccessor()
+    {
+        return dataAccessor == null ? parent.getDataAccessor() : dataAccessor;
+    }
+
+    public void setDataAccessor(DataAccessor dataAccessor)
+    {
+        this.dataAccessor = dataAccessor;
+    }
+    
+    public QueryConf dataAccessor(DataAccessor dataAccessor) {
+        setDataAccessor(dataAccessor);
+        return this;
+    }
+
     public QueryRunner getParent()
     {
         return parent;
+    }
+    
+    public <T> T get(Class<?> configurationClass, Object id) {
+        return get(getConfiguration(configurationClass), id);
+    }
+    
+    public <T> T get(EntityConfiguration configuration, Object id) {
+        return get(getDescription(configuration), id);
+    }
+    
+    public <T> T get(EntityDescription description, Object id) {
+        return getDataAccessor().get(this, description, id);
+    }
+    
+    public EntityDescription getDescription(EntityConfiguration configuration) {
+        //TODO
+        return null;
+    }
+    
+    public EntityConfiguration getConfiguration(Class<?> configurationClass) {
+        //TODO
+        return null;
     }
 }

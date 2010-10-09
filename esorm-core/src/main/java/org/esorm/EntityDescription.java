@@ -22,8 +22,26 @@ package org.esorm;
  * @author Vitalii Tymchyshyn
  *
  */
-public interface EntityDirector
-extends EntityConfigurator, EntityManager
+public class EntityDescription
 {
+    private final EntityConfiguration configuration;
+    private final EntityManager manager;
+
+    public EntityDescription(EntityConfiguration configuration,
+                             EntityManager manager)
+    {
+        this.configuration = configuration;
+        this.manager = manager;
+    }
+
+    public EntityConfiguration getConfiguration()
+    {
+        return configuration;
+    }
+
+    public EntityManager getManager()
+    {
+        return manager;
+    } 
 
 }

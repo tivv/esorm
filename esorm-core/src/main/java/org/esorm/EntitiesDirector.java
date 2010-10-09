@@ -22,7 +22,8 @@ package org.esorm;
  * @author Vitalii Tymchyshyn
  *
  */
-public class EntityManager
+public interface EntitiesDirector
+extends EntitiesConfigurator, EntitiesManager
 {
 
 }

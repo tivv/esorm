@@ -8,4 +8,10 @@
   <groupId>com.github.tivv.esorm</groupId>
   <artifactId>esorm-core</artifactId>
   <version>0.0.1-SNAPSHOT</version>
+  <dependencies>
+  	<dependency>
+  		<groupId>org.jcloudlet</groupId>
+  		<artifactId>jcloudlet-bean-core</artifactId>
+  	</dependency>
+  </dependencies>
 </project>

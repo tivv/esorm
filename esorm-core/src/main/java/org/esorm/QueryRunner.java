@@ -26,4 +26,5 @@ public interface QueryRunner
 {
     public ErrorHandler getErrorHandler();
     public ConnectionProvider getConnectionProvider();
+    public DataAccessor getDataAccessor();
 }
