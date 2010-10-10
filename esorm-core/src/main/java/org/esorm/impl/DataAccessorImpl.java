@@ -18,8 +18,7 @@
  */
 package org.esorm.impl;
 
-import java.sql.Connection;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -76,17 +75,18 @@ public class DataAccessorImpl implements DataAccessor
     private interface Worker<R, P1, P2> {
         R run(Connection con, QueryRunner queryRunner, P1 param1, P2 param2) throws SQLException;
     }
-    
+
     private static class GetWorker<R> implements Worker<R, EntityConfiguration, Object>
     {
         /* (non-Javadoc)
          * @see org.esorm.impl.DataAccessorImpl.Worker#run(java.sql.Connection, org.esorm.QueryRunner, java.lang.Object, java.lang.Object)
          */
         public R run(Connection con, QueryRunner queryRunner,
-                     EntityConfiguration configuration, Object notUsed)
+                     EntityConfiguration configuration, Object id)
         throws SQLException
         {
-            // TODO Auto-generated method stub
+            StringBuilder query = new StringBuilder();
+            query.append("select ");
             return null;
         }
     }

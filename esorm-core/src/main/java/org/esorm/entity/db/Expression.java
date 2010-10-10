@@ -16,21 +16,22 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with EsORM.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.esorm;
+package org.esorm.entity.db;
+
+import java.util.List;
+import java.util.Map;
 
 /**
  * @author Vitalii Tymchyshyn
  *
  */
-public interface EntitiesConfigurator
+public interface Expression
 {
+    List<Table> getTables();
+    
+    void appendQuery(Appendable appendTo, Map<Table, String> tableNames);
 
-    /**
-     * @param name
-     * @param configurationLocations
-     * @return
-     */
-    LazyManagedEntityConfiguration resolveConfiguration(String name,
-                                             Iterable<String> configurationLocations);
-
+    boolean isInsertable();
+    boolean isUpdateable();
+    boolean isQueryable();
 }

@@ -18,6 +18,8 @@
  */
 package org.esorm;
 
+import org.esorm.entity.EntityProperty;
+
 /**
  * @author Vitalii Tymchyshyn
  *
@@ -27,4 +29,5 @@ public interface EntityConfiguration
     EntityManager getManager();
     String getName();
     String getLocation();
+    Iterable<EntityProperty> getProperties();
 }

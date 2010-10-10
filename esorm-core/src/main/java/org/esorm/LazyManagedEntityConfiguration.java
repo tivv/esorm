@@ -22,15 +22,12 @@ package org.esorm;
  * @author Vitalii Tymchyshyn
  *
  */
-public interface EntitiesConfigurator
+public interface LazyManagedEntityConfiguration
+extends EntityConfiguration
 {
-
-    /**
-     * @param name
-     * @param configurationLocations
-     * @return
+    /** This call will be called only once during configuration resolving
+     * 
+     * @param manager
      */
-    LazyManagedEntityConfiguration resolveConfiguration(String name,
-                                             Iterable<String> configurationLocations);
-
+    void setManager(EntityManager manager);
 }

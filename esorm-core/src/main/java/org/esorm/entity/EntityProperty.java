@@ -16,21 +16,18 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with EsORM.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.esorm;
+package org.esorm.entity;
+
+import java.util.List;
+
+import org.esorm.entity.db.Expression;
 
 /**
  * @author Vitalii Tymchyshyn
  *
  */
-public interface EntitiesConfigurator
+public interface EntityProperty
 {
-
-    /**
-     * @param name
-     * @param configurationLocations
-     * @return
-     */
-    LazyManagedEntityConfiguration resolveConfiguration(String name,
-                                             Iterable<String> configurationLocations);
-
+    String getName();
+    Expression getExpression();
 }

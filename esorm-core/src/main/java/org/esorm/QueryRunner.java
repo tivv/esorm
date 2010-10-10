@@ -41,5 +41,11 @@ public interface QueryRunner
     public Iterable<String> getEntityImplementationLocationsIterable();
 
     public MutableEntityConfiguration getMutableEntityConfiguration(String name);
+
+    public Iterable<EntitiesConfigurator> getEntitiesConfiguratorsIterable();
+    /**
+     * @return
+     */
+    public Iterable<EntitiesManager> getEntitiesManagersIterable();
 }
 

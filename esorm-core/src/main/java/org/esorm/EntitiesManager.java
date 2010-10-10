@@ -25,4 +25,12 @@ package org.esorm;
 public interface EntitiesManager
 {
 
+    /**
+     * @param newConfiguration
+     * @param implementationLocations
+     * @return
+     */
+    EntityManager createManager(EntityConfiguration newConfiguration,
+                                Iterable<String> implementationLocations);
+
 }

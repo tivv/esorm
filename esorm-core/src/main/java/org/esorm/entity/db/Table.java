@@ -16,21 +16,15 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with EsORM.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.esorm;
+package org.esorm.entity.db;
 
 /**
  * @author Vitalii Tymchyshyn
  *
  */
-public interface EntitiesConfigurator
+public interface Table
 {
-
-    /**
-     * @param name
-     * @param configurationLocations
-     * @return
-     */
-    LazyManagedEntityConfiguration resolveConfiguration(String name,
-                                             Iterable<String> configurationLocations);
+    String getSchema();
+    String getName();
 
 }

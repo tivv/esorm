@@ -94,4 +94,22 @@ implements QueryRunner
         return null;
     }
 
+    /* (non-Javadoc)
+     * @see org.esorm.QueryRunner#getEntitiesConfiguratorsIterable()
+     */
+    public Iterable<EntitiesConfigurator> getEntitiesConfiguratorsIterable()
+    {
+        // TODO Add autoloading configurators
+        return Collections.emptyList();
+    }
+
+    /* (non-Javadoc)
+     * @see org.esorm.QueryRunner#getEntitiesManagersIterable()
+     */
+    public Iterable<EntitiesManager> getEntitiesManagersIterable()
+    {
+        // TODO Add autoloading managers
+        return Collections.emptyList();
+    }
+
 }

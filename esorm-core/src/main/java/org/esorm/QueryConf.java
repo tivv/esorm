@@ -33,8 +33,10 @@ public class QueryConf implements QueryRunner
     private ErrorHandler errorHandler;
     private ConnectionProvider connectionProvider;
     private DataAccessor dataAccessor;
-    private List<EntitiesConfigurator> entityConfigurators;
-    private List<EntitiesManager> entityManagers;
+    private List<EntitiesConfigurator> entitiesConfigurators;
+    private Iterable<EntitiesConfigurator> entitiesConfiguratorsIterable;
+    private List<EntitiesManager> entitiesManagers;
+    private Iterable<EntitiesManager> entitiesManagersIterable;
     private List<String> entityConfigurationLocations;
     private Iterable<String> entityConfigurationLocationsIterable;
     private List<String> entityImplementationLocations;
@@ -130,6 +132,7 @@ public class QueryConf implements QueryRunner
     public void setEntityConfigurationLocations(List<String> entityConfigurationLocations)
     {
         this.entityConfigurationLocations = entityConfigurationLocations;
+        this.entityConfigurationLocationsIterable = null;
     }
     
     public QueryConf entityConfigurationLocations(List<String> entityConfigurationLocations)
@@ -138,9 +141,9 @@ public class QueryConf implements QueryRunner
         return this;
     }
     
-    public QueryConf entityConfigurationLocation(String packageName)
+    public QueryConf entityConfigurationLocation(String location)
     {
-        getEntityConfigurationLocations().add(packageName);
+        getEntityConfigurationLocations().add(location);
         return this;
     }
 
@@ -154,6 +157,7 @@ public class QueryConf implements QueryRunner
     public void setEntityImplementationLocations(List<String> entityImplementationLocations)
     {
         this.entityImplementationLocations = entityImplementationLocations;
+        this.entityImplementationLocationsIterable = null;
     }
     
     public QueryConf entityImplementationLocations(List<String> entityImplementationLocations) {
@@ -175,6 +179,17 @@ public class QueryConf implements QueryRunner
             }
             return entityImplementationLocationsIterable; 
         }
+    }
+    
+    public QueryConf entityImplementationLocation(String entityImplementationLocation) {
+        getEntityImplementationLocations().add(entityImplementationLocation);
+        return this;
+    }
+    
+    public QueryConf entityLocation(String entityLocation) {
+        entityConfigurationLocation(entityLocation);
+        return entityImplementationLocation(entityLocation);
+        
     }
 
     public <T> T get(Class<?> configurationClass, Object id) {
@@ -199,15 +214,55 @@ public class QueryConf implements QueryRunner
             mutableConfigurations = new HashMap<String, MutableEntityConfiguration>();
         return mutableConfigurations;
     }
+    
+    public Iterable<EntitiesConfigurator> getEntitiesConfiguratorsIterable() {
+        if (entitiesConfigurators == null)
+            return parent.getEntitiesConfiguratorsIterable(); 
+        if (entitiesConfiguratorsIterable == null) {
+            entitiesConfiguratorsIterable = new ReadOnlyReverseIterable<EntitiesConfigurator>(entitiesConfigurators);
+        }
+        return entitiesConfiguratorsIterable;
+    }
 
-    public EntityConfiguration resolveConfiguration(String name, String configurationLocation, String managerLocation) {
+    public Iterable<EntitiesManager> getEntitiesManagersIterable() {
+        if (entitiesManagers == null)
+            return parent.getEntitiesManagersIterable(); 
+        if (entitiesManagersIterable == null) {
+            entitiesManagersIterable = new ReadOnlyReverseIterable<EntitiesManager>(entitiesManagers);
+        }
+        return entitiesManagersIterable;
+    }
+
+    public EntityConfiguration resolveConfiguration(String name, String configurationLocation, String implementationLocation) {
         EntityConfiguration rc = getResolvedConfigurations().get(name);
         if (rc != null) {
-            assertConfigurationConsistent(rc, configurationLocation, managerLocation);
+            assertConfigurationConsistent(rc, configurationLocation, implementationLocation);
             return rc;
         }
-        //TODO
-        return null;
+        Iterable<String> configurationLocations = configurationLocation == null ? getEntityConfigurationLocations() :
+            Collections.singleton(configurationLocation);
+        LazyManagedEntityConfiguration newConfiguration = null;
+        for (EntitiesConfigurator configurator : getEntitiesConfiguratorsIterable()) {
+            //TODO - Error handling
+            newConfiguration = configurator.resolveConfiguration(name, configurationLocations);
+            if (newConfiguration != null) {
+                break;
+            }
+        }
+        if (newConfiguration == null)
+            throw new IllegalStateException("Can't find configuration for bean " + name + " under " + configurationLocations);
+        
+        Iterable<String> implementationLocations = implementationLocation == null ? getEntityImplementationLocations() : 
+            Collections.singleton(implementationLocation);
+        for (EntitiesManager manager : getEntitiesManagersIterable()) {
+            EntityManager entityManager = manager.createManager(newConfiguration, implementationLocations);
+            if (entityManager != null) {
+                newConfiguration.setManager(entityManager);
+                getResolvedConfigurations().put(newConfiguration.getName(), newConfiguration);
+                return newConfiguration;        
+            }
+        }
+        throw new IllegalStateException("Can't fina manager for bean " + name + " under " + implementationLocations);
     }
 
     /**
