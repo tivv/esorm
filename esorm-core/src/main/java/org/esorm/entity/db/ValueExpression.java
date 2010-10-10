@@ -25,11 +25,11 @@ import java.util.Map;
  * @author Vitalii Tymchyshyn
  *
  */
-public interface Expression
+public interface ValueExpression
 {
-    List<Table> getTables();
+    Iterable<SelectExpression> getTables();
     
-    void appendQuery(Appendable appendTo, Map<Table, String> tableNames);
+    void appendQuery(Appendable appendTo, Map<SelectExpression, String> tableNames);
 
     boolean isInsertable();
     boolean isUpdateable();

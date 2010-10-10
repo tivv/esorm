@@ -20,7 +20,7 @@ package org.esorm.entity;
 
 import java.util.List;
 
-import org.esorm.entity.db.Expression;
+import org.esorm.entity.db.ValueExpression;
 
 /**
  * @author Vitalii Tymchyshyn
@@ -28,6 +28,7 @@ import org.esorm.entity.db.Expression;
  */
 public interface EntityProperty
 {
+    Iterable<String> getPath();
     String getName();
-    Expression getExpression();
+    ValueExpression getExpression();
 }

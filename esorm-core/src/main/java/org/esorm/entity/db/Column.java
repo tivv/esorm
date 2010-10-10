@@ -22,9 +22,9 @@ package org.esorm.entity.db;
  * @author Vitalii Tymchyshyn
  *
  */
-public interface Column extends Expression
+public interface Column extends ValueExpression
 {
-    Table getTable();
+    SelectExpression getTable();
     String getColumnName();
 
 }

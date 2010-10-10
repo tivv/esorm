@@ -22,7 +22,7 @@ package org.esorm.entity.db;
  * @author Vitalii Tymchyshyn
  *
  */
-public interface Table
+public interface Table extends SelectExpression
 {
     String getSchema();
     String getName();

@@ -19,10 +19,14 @@
 package org.esorm.impl;
 
 import java.sql.*;
+import java.util.*;
+import java.util.Map.Entry;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.esorm.*;
+import org.esorm.entity.EntityProperty;
+import org.esorm.entity.db.*;
 
 /**
  * @author Vitalii Tymchyshyn
@@ -86,7 +90,64 @@ public class DataAccessorImpl implements DataAccessor
         throws SQLException
         {
             StringBuilder query = new StringBuilder();
+            Map<SelectExpression, String> tablesInvolved = new HashMap<SelectExpression, String>();
+            Map<ValueExpression, Integer> resultColumns =  new HashMap<ValueExpression, Integer>(); 
             query.append("select ");
+            Iterable<EntityProperty> properties = configuration.getProperties();
+            for (EntityProperty property : properties) {
+                ValueExpression expression = property.getExpression();
+                if (!resultColumns.containsKey(expression)) {
+                    int num = resultColumns.size() + 1;
+                    resultColumns.put(expression, num);
+                    for (SelectExpression table : expression.getTables()) {
+                        if (!tablesInvolved.containsKey(table)) {
+                            int tableNum = tablesInvolved.size() + 1;
+                            tablesInvolved.put(table, "t" + tableNum);
+                        }
+                    }
+                    if (num != 0)
+                        query.append(',');
+                    expression.appendQuery(query, tablesInvolved);
+                }
+            }
+            if (resultColumns.isEmpty())
+                throw new IllegalArgumentException("Nothing to select for " + configuration.getName());
+            //TODO - complex primary key by id / name
+            query.append(" from ");
+            Iterable<Column> firstTablePK = null;
+            Map<SelectExpression, Iterable<Column>> primaryKeys = configuration.getPrimaryKeys();
+            for (Entry<SelectExpression, String> e : tablesInvolved.entrySet()) {
+                if (firstTablePK != null)
+                    query.append(" join ");
+                e.getKey().appendQuery(query, e.getValue());
+                Iterable<Column> primaryKey = primaryKeys.get(e.getKey());
+                if (primaryKey == null)
+                    throw new IllegalStateException("Table " + e.getKey() + " does not have primary key specified");
+                if (firstTablePK == null) {
+                    firstTablePK = primaryKey;
+                } else {
+                    Iterator<Column> primaryKeyIterator = primaryKey.iterator();
+                    String toAppend = " on ";
+                    for (Column firstColumn : firstTablePK) {
+                        //TODO add .hasNext check
+                        Column secondColumn = primaryKeyIterator.next();
+                        query.append(toAppend);
+                        toAppend = " and ";
+                        firstColumn.appendQuery(query, tablesInvolved);
+                        query.append("=");
+                        secondColumn.appendQuery(query, tablesInvolved);
+                    }
+                    //TODO add .hasNext check
+                }
+            }
+            String toAppend = " where ";
+            for(Column pkColumn : firstTablePK) {
+                query.append(toAppend);
+                toAppend = " and ";
+                pkColumn.appendQuery(query, tablesInvolved);
+                query.append("=?");
+            }
+            
             return null;
         }
     }

@@ -43,6 +43,7 @@ public class QueryConf implements QueryRunner
     private Iterable<String> entityImplementationLocationsIterable;
     private Map<String, EntityConfiguration> resolvedConfigurations;
     private Map<String, MutableEntityConfiguration> mutableConfigurations;
+    //TODO add cache for often queries building.
     
     public QueryConf() 
     {
@@ -321,6 +322,4 @@ public class QueryConf implements QueryRunner
     public EntityConfiguration getConfiguration(Class<?> configurationClass) {
         return getConfiguration(configurationClass.getSimpleName(), configurationClass.getName(), null);
     }
-    
-    
 }

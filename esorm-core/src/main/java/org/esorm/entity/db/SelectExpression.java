@@ -16,22 +16,13 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with EsORM.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.esorm;
-
-import java.util.Map;
-
-import org.esorm.entity.EntityProperty;
-import org.esorm.entity.db.*;
+package org.esorm.entity.db;
 
 /**
  * @author Vitalii Tymchyshyn
  *
  */
-public interface EntityConfiguration
+public interface SelectExpression
 {
-    EntityManager getManager();
-    String getName();
-    String getLocation();
-    Iterable<EntityProperty> getProperties();
-    Map<SelectExpression, Iterable<Column>> getPrimaryKeys();
+    void appendQuery(Appendable appendTo, String alias);
 }
