@@ -24,5 +24,7 @@ package org.esorm;
  */
 public interface EntityConfiguration
 {
-
+    EntityManager getManager();
+    String getName();
+    String getLocation();
 }

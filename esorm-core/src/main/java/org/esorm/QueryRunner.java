@@ -18,6 +18,8 @@
  */
 package org.esorm;
 
+import java.util.List;
+
 /**
  * @author Vitalii Tymchyshyn
  *
@@ -27,4 +29,17 @@ public interface QueryRunner
     public ErrorHandler getErrorHandler();
     public ConnectionProvider getConnectionProvider();
     public DataAccessor getDataAccessor();
+    /**
+     * @return
+     */
+    public List<String> getEntityConfigurationLocations();
+    public Iterable<String> getEntityConfigurationLocationsIterable();
+    /**
+     * @return
+     */
+    public List<String> getEntityImplementationLocations();
+    public Iterable<String> getEntityImplementationLocationsIterable();
+
+    public MutableEntityConfiguration getMutableEntityConfiguration(String name);
 }
+

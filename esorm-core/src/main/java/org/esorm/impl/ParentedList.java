@@ -45,8 +45,8 @@ extends AbstractList<E>
      */
     public E get(int index)
     {
-        return index < storage.size() ? storage.get(index) : 
-            parent.get( index - storage.size() );
+        return index < parent.size() ? parent.get(index) : 
+            storage.get( index - parent.size() );
     }
     /* (non-Javadoc)
      * @see java.util.AbstractCollection#size()
@@ -55,4 +55,18 @@ extends AbstractList<E>
     {
         return parent.size() + storage.size();
     }
+    
+    public void add(int index, E element)
+    {
+        if (index < parent.size())
+            throw new IllegalArgumentException("You can't change parent list");
+        storage.add(index - parent.size(), element);
+    }
+    public E remove(int index)
+    {
+        if (index < parent.size())
+            throw new IllegalArgumentException("You can't change parent list");
+        return super.remove(index - parent.size());
+    }
+
 }

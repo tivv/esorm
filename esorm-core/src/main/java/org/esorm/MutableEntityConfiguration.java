@@ -16,29 +16,13 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with EsORM.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.esorm.impl;
-
-import org.esorm.ErrorHandler;
-import org.esorm.RegisteredExceptionWrapper;
+package org.esorm;
 
 /**
  * @author Vitalii Tymchyshyn
  *
  */
-public class ErrorHandlerImpl
-implements ErrorHandler
+public interface MutableEntityConfiguration extends EntityConfiguration
 {
-    public static final ErrorHandlerImpl INSTANCE = new ErrorHandlerImpl();
-
-    /* (non-Javadoc)
-     * @see org.esorm.ErrorHandler#handle(java.lang.Exception)
-     */
-    public void handle(Exception e)
-    {
-        //TODO - introduce SQLException handling
-        if (e instanceof RuntimeException)
-            throw (RuntimeException)e;
-        throw new RegisteredExceptionWrapper(e);
-        
-    }
+    public void setManager(EntityManager manager);
 }

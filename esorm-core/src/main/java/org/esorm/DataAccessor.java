@@ -27,10 +27,10 @@ public interface DataAccessor
 
     /**
      * @param queryConf
-     * @param description
+     * @param configuration
      * @param id
      * @return
      */
-    <T> T get(QueryRunner queryRunner, EntityDescription description, Object id);
+    <T> T get(QueryRunner queryRunner, EntityConfiguration configuration, Object id);
 
 }

@@ -19,9 +19,9 @@
 package org.esorm;
 
 import java.sql.Connection;
-import java.util.List;
+import java.util.*;
 
-import org.esorm.impl.DefaultQueryConf;
+import org.esorm.impl.*;
 
 /**
  * @author Vitalii Tymchyshyn
@@ -35,6 +35,12 @@ public class QueryConf implements QueryRunner
     private DataAccessor dataAccessor;
     private List<EntitiesConfigurator> entityConfigurators;
     private List<EntitiesManager> entityManagers;
+    private List<String> entityConfigurationLocations;
+    private Iterable<String> entityConfigurationLocationsIterable;
+    private List<String> entityImplementationLocations;
+    private Iterable<String> entityImplementationLocationsIterable;
+    private Map<String, EntityConfiguration> resolvedConfigurations;
+    private Map<String, MutableEntityConfiguration> mutableConfigurations;
     
     public QueryConf() 
     {
@@ -102,30 +108,164 @@ public class QueryConf implements QueryRunner
         return this;
     }
 
-    public QueryRunner getParent()
+    public List<String> getEntityConfigurationLocations()
     {
-        return parent;
+        if (entityConfigurationLocations == null)
+            entityConfigurationLocations = new ParentedList<String>(parent.getEntityConfigurationLocations());
+        return entityConfigurationLocations;
+    }
+
+    public Iterable<String> getEntityConfigurationLocationsIterable()
+    {
+        if (entityConfigurationLocations == null)
+            return parent.getEntityConfigurationLocationsIterable();
+        else {
+            if (entityConfigurationLocationsIterable == null) {
+                entityConfigurationLocationsIterable = new ReadOnlyReverseIterable<String>(entityConfigurationLocations);
+            }
+            return entityConfigurationLocationsIterable; 
+        }
     }
     
+    public void setEntityConfigurationLocations(List<String> entityConfigurationLocations)
+    {
+        this.entityConfigurationLocations = entityConfigurationLocations;
+    }
+    
+    public QueryConf entityConfigurationLocations(List<String> entityConfigurationLocations)
+    {
+        setEntityConfigurationLocations(entityConfigurationLocations);
+        return this;
+    }
+    
+    public QueryConf entityConfigurationLocation(String packageName)
+    {
+        getEntityConfigurationLocations().add(packageName);
+        return this;
+    }
+
+    public List<String> getEntityImplementationLocations()
+    {
+        if (entityImplementationLocations == null)
+            entityImplementationLocations = new ParentedList<String>(parent.getEntityImplementationLocations());
+        return entityImplementationLocations;
+    }
+
+    public void setEntityImplementationLocations(List<String> entityImplementationLocations)
+    {
+        this.entityImplementationLocations = entityImplementationLocations;
+    }
+    
+    public QueryConf entityImplementationLocations(List<String> entityImplementationLocations) {
+        setEntityImplementationLocations(entityImplementationLocations);
+        return this;
+    }
+    
+
+    /* (non-Javadoc)
+     * @see org.esorm.QueryRunner#getEntityBeanIterable()
+     */
+    public Iterable<String> getEntityImplementationLocationsIterable()
+    {
+        if (entityImplementationLocations == null)
+            return parent.getEntityConfigurationLocationsIterable();
+        else {
+            if (entityImplementationLocationsIterable == null) {
+                entityImplementationLocationsIterable = new ReadOnlyReverseIterable<String>(entityImplementationLocations);
+            }
+            return entityImplementationLocationsIterable; 
+        }
+    }
+
     public <T> T get(Class<?> configurationClass, Object id) {
         return get(getConfiguration(configurationClass), id);
     }
     
     public <T> T get(EntityConfiguration configuration, Object id) {
-        return get(getDescription(configuration), id);
+        return getDataAccessor().get(this, configuration, id);
     }
     
-    public <T> T get(EntityDescription description, Object id) {
-        return getDataAccessor().get(this, description, id);
-    }
     
-    public EntityDescription getDescription(EntityConfiguration configuration) {
+    private Map<String, EntityConfiguration> getResolvedConfigurations()
+    {
+        if (resolvedConfigurations == null)
+            resolvedConfigurations = new HashMap<String, EntityConfiguration>();
+        return resolvedConfigurations;
+    }
+
+    private Map<String, MutableEntityConfiguration> getMutableConfigurations()
+    {
+        if (mutableConfigurations == null)
+            mutableConfigurations = new HashMap<String, MutableEntityConfiguration>();
+        return mutableConfigurations;
+    }
+
+    public EntityConfiguration resolveConfiguration(String name, String configurationLocation, String managerLocation) {
+        EntityConfiguration rc = getResolvedConfigurations().get(name);
+        if (rc != null) {
+            assertConfigurationConsistent(rc, configurationLocation, managerLocation);
+            return rc;
+        }
         //TODO
         return null;
+    }
+
+    /**
+     * @param configuration
+     * @param configurationLocation
+     * @param managerLocation
+     */
+    private void assertConfigurationConsistent(EntityConfiguration configuration,
+                                               String configurationLocation,
+                                               String managerLocation)
+    {
+        if (configurationLocation != null && !configurationLocation.equals(configuration.getLocation()))
+            throw new IllegalStateException("Requested entity " + configuration.getName() + " has configuration location " +
+                configurationLocation + " different to already resolved one: " + configuration.getLocation());
+        if (managerLocation != null && !managerLocation.equals(configuration.getManager().getLocation()))
+            throw new IllegalStateException("Requested entity " + configuration.getName() + " has manager location " +
+                managerLocation + " different to already resolved one: " + configuration.getManager().getLocation());
+    }
+    
+    public MutableEntityConfiguration mutateConfiguration(EntityConfiguration configuration) {
+        return mutateConfiguration(configuration.getName(), configuration);
+    }
+    
+    public MutableEntityConfiguration mutateConfiguration(String name, EntityConfiguration configuration) {
+        if (getMutableConfigurations().containsKey(name))
+            throw new IllegalStateException("Mutable configuration with name " + name + " already exists");
+        MutableEntityConfiguration rc = new MutableEntityConfigurationImpl(name, configuration);
+        getMutableConfigurations().put(name, rc);
+        return rc;
+    }
+    
+    public MutableEntityConfiguration getMutableEntityConfiguration(String name) {
+        if (mutableConfigurations != null)
+        {
+            MutableEntityConfiguration rc = mutableConfigurations.get(name);
+            if (rc != null)
+                return rc;
+        }
+        return parent.getMutableEntityConfiguration(name);
+    }
+    
+    public EntityConfiguration getConfiguration(String name, String configurationLocation, String managerLocation) {
+        EntityConfiguration rc = getMutableEntityConfiguration(name);
+        if (rc != null) {
+            assertConfigurationConsistent(rc, configurationLocation, managerLocation);
+            return rc;
+        }
+        return resolveConfiguration(name, configurationLocation, managerLocation);
+        
+    }
+    
+    public EntityConfiguration getConfiguration(String name) {
+        return getConfiguration(name, null, null);
     }
     
     public EntityConfiguration getConfiguration(Class<?> configurationClass) {
-        //TODO
-        return null;
+        return getConfiguration(configurationClass.getSimpleName(), configurationClass.getName(), null);
     }
+    
+    
 }

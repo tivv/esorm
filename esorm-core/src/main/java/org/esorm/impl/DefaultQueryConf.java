@@ -18,6 +18,9 @@
  */
 package org.esorm.impl;
 
+import java.util.Collections;
+import java.util.List;
+
 import org.esorm.*;
 
 /**
@@ -49,6 +52,46 @@ implements QueryRunner
     public DataAccessor getDataAccessor()
     {
         return DataAccessorImpl.INSTANCE;
+    }
+
+    /* (non-Javadoc)
+     * @see org.esorm.QueryRunner#getConfigurationImports()
+     */
+    public List<String> getEntityConfigurationLocations()
+    {
+        return Collections.emptyList();
+    }
+
+    /* (non-Javadoc)
+     * @see org.esorm.QueryRunner#getConfigurationImportsIterable()
+     */
+    public Iterable<String> getEntityConfigurationLocationsIterable()
+    {
+        return Collections.emptyList();
+    }
+
+    /* (non-Javadoc)
+     * @see org.esorm.QueryRunner#getEntityBeanImports()
+     */
+    public List<String> getEntityImplementationLocations()
+    {
+        return Collections.emptyList();
+    }
+
+    /* (non-Javadoc)
+     * @see org.esorm.QueryRunner#getEntityBeanIterable()
+     */
+    public Iterable<String> getEntityImplementationLocationsIterable()
+    {
+        return Collections.emptyList();
+    }
+
+    /* (non-Javadoc)
+     * @see org.esorm.QueryRunner#getMutableEntityConfiguration(java.lang.String)
+     */
+    public MutableEntityConfiguration getMutableEntityConfiguration(String name)
+    {
+        return null;
     }
 
 }

@@ -5,9 +5,8 @@
     <groupId>com.github.tivv.esorm</groupId>
     <version>0.0.1-SNAPSHOT</version>
   </parent>
-  <groupId>com.github.tivv.esorm</groupId>
   <artifactId>esorm-jpa</artifactId>
-  <version>0.0.1-SNAPSHOT</version>
+  <packaging>jar</packaging>
   <dependencies>
     <dependency>
       <groupId>org.apache.geronimo.specs</groupId>
@@ -17,7 +16,7 @@
     <dependency>
     	<groupId>com.github.tivv.esorm</groupId>
     	<artifactId>esorm-core</artifactId>
-    	<version>0.0.1-SNAPSHOT</version>
+    	<version>${project.version}</version>
     </dependency>
   </dependencies>
 </project>

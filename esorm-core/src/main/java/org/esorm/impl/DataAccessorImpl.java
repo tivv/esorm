@@ -40,10 +40,10 @@ public class DataAccessorImpl implements DataAccessor
      * @see org.esorm.DataAccessor#get(org.esorm.QueryRunner, org.esorm.EntityDescription, java.lang.Object)
      */
     @SuppressWarnings("unchecked")
-    public <T> T get(QueryRunner queryRunner, EntityDescription description,
+    public <T> T get(QueryRunner queryRunner, EntityConfiguration configuration,
                      Object id)
     {
-        return (T)run(GET_WORKER, queryRunner, description, id);
+        return (T)run(GET_WORKER, queryRunner, configuration, id);
     }
     
     private <T, P1, P2> T run(Worker<T, P1, P2> worker, QueryRunner queryRunner, P1 param1, P2 param2) {
@@ -77,13 +77,13 @@ public class DataAccessorImpl implements DataAccessor
         R run(Connection con, QueryRunner queryRunner, P1 param1, P2 param2) throws SQLException;
     }
     
-    private static class GetWorker<R> implements Worker<R, EntityDescription, Object>
+    private static class GetWorker<R> implements Worker<R, EntityConfiguration, Object>
     {
         /* (non-Javadoc)
          * @see org.esorm.impl.DataAccessorImpl.Worker#run(java.sql.Connection, org.esorm.QueryRunner, java.lang.Object, java.lang.Object)
          */
         public R run(Connection con, QueryRunner queryRunner,
-                     EntityDescription param1, Object param2)
+                     EntityConfiguration configuration, Object notUsed)
         throws SQLException
         {
             // TODO Auto-generated method stub

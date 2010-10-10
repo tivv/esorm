@@ -16,32 +16,51 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with EsORM.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.esorm;
+package org.esorm.impl;
+
+import org.esorm.*;
 
 /**
  * @author Vitalii Tymchyshyn
  *
  */
-public class EntityDescription
+public class MutableEntityConfigurationImpl implements MutableEntityConfiguration
 {
-    private final EntityConfiguration configuration;
-    private final EntityManager manager;
+    private final EntityConfiguration parent;
+    private EntityManager manager;
+    private final String name;
+    private String location;
 
-    public EntityDescription(EntityConfiguration configuration,
-                             EntityManager manager)
+    public MutableEntityConfigurationImpl(String name, EntityConfiguration parent)
     {
-        this.configuration = configuration;
+        this.parent = parent;
+        this.name = name;
+        this.location = parent.getLocation();
+    }
+    
+    public EntityManager getManager()
+    {
+        return manager == null ? parent.getManager() : manager;
+    }
+
+    public void setManager(EntityManager manager)
+    {
         this.manager = manager;
     }
 
-    public EntityConfiguration getConfiguration()
+    public String getName()
     {
-        return configuration;
+        return name;
     }
 
-    public EntityManager getManager()
+    public String getLocation()
     {
-        return manager;
-    } 
+        return location;
+    }
+
+    public void setLocation(String location)
+    {
+        this.location = location;
+    }
 
 }

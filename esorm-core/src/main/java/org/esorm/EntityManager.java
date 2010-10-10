@@ -22,7 +22,7 @@ package org.esorm;
  * @author Vitalii Tymchyshyn
  *
  */
-public class EntityManager
+public interface EntityManager
 {
-
+    String getLocation(); 
 }
