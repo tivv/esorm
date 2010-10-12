@@ -115,7 +115,7 @@ public class DataAccessorImpl implements DataAccessor
             //TODO - complex primary key by id / name
             query.append(" from ");
             Iterable<Column> firstTablePK = null;
-            Map<SelectExpression, Iterable<Column>> primaryKeys = configuration.getPrimaryKeys();
+            Map<SelectExpression, ? extends Iterable<Column>> primaryKeys = configuration.getPrimaryKeys();
             for (Entry<SelectExpression, String> e : tablesInvolved.entrySet()) {
                 if (firstTablePK != null)
                     query.append(" join ");
@@ -147,8 +147,55 @@ public class DataAccessorImpl implements DataAccessor
                 pkColumn.appendQuery(query, tablesInvolved);
                 query.append("=?");
             }
-            
-            return null;
+            PreparedStatement stmt = con.prepareStatement(query.toString());
+            ResultSet rs = null;
+            List<Object> parsedId = parseId(id);
+            boolean hadError = true;
+            try {
+                int i = 0;
+                for(Column pkColumn : firstTablePK) {
+                    stmt.setObject(i + 1, parsedId.get(i));
+                    i++;
+                }
+                rs = stmt.executeQuery();
+                if (!rs.next())
+                    return null;
+                EntityBuilder<R> entityBuilder = configuration.getManager().makeBuilder();
+                entityBuilder.prepare();
+                for (EntityProperty property: properties) {
+                    entityBuilder.setProperty(property.getName(), 
+                        rs.getObject(resultColumns.get(property.getExpression())));
+                }
+                R rc = entityBuilder.build();
+                if (rs.next())
+                    throw new IllegalStateException("More than one row returned");
+                hadError = false;
+                return rc;
+            } finally {
+                if (!hadError) {
+                    if (rs != null)
+                        rs.close();
+                    stmt.close();
+                } else {
+                    try {
+                        if (rs != null)
+                            rs.close();
+                        stmt.close();
+                    } catch (Exception e) {
+                        LOG.log(Level.WARNING, "Second exception while statement close", e);
+                    }
+                }
+            }
+        }
+
+        /**
+         * @param id
+         * @return
+         */
+        private List<Object> parseId(Object id)
+        {
+            // TODO Multi-column ids
+            return Collections.singletonList(id);
         }
     }
 }

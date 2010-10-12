@@ -16,14 +16,23 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with EsORM.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.esorm;
+package org.esorm.utils;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author Vitalii Tymchyshyn
  *
  */
-public interface EntityManager
+public class IterableUtils
 {
-    String getLocation(); 
-    <R> EntityBuilder<R> makeBuilder(); 
+    public static <R> List<R> toList(Iterable<R> values) {
+        List<R> rc = new ArrayList<R>();
+        for (R value : values) {
+            rc.add(value);
+        }
+        return rc;
+    }
+
 }

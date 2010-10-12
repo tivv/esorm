@@ -18,7 +18,14 @@
  */
 package org.esorm.impl;
 
+import java.util.*;
+import java.util.Map.Entry;
+
 import org.esorm.*;
+import org.esorm.entity.EntityProperty;
+import org.esorm.entity.db.Column;
+import org.esorm.entity.db.SelectExpression;
+import org.esorm.utils.IterableUtils;
 
 /**
  * @author Vitalii Tymchyshyn
@@ -30,12 +37,20 @@ public class MutableEntityConfigurationImpl implements MutableEntityConfiguratio
     private EntityManager manager;
     private final String name;
     private String location;
+    private List<EntityProperty> properties;
+    private Map<SelectExpression, List<Column>> primaryKeys;
 
     public MutableEntityConfigurationImpl(String name, EntityConfiguration parent)
     {
         this.parent = parent;
         this.name = name;
         this.location = parent.getLocation();
+        properties = IterableUtils.toList(parent.getProperties());
+        primaryKeys = new HashMap<SelectExpression, List<Column>>();
+        for (Entry<SelectExpression, ? extends Iterable<Column>> e : parent.getPrimaryKeys().entrySet()) {
+            primaryKeys.put(e.getKey(), IterableUtils.toList(e.getValue()));
+        }
+        
     }
     
     public EntityManager getManager()
@@ -61,6 +76,37 @@ public class MutableEntityConfigurationImpl implements MutableEntityConfiguratio
     public void setLocation(String location)
     {
         this.location = location;
+    }
+
+
+    public List<EntityProperty> getProperties()
+    {
+        return properties;
+    }
+
+    public void setProperties(List<EntityProperty> properties)
+    {
+        this.properties = properties;
+    }
+
+    /* (non-Javadoc)
+     * @see org.esorm.EntityConfiguration#getPrimaryKeys()
+     */
+    public Map<SelectExpression, List<Column>> getPrimaryKeys()
+    {
+        return primaryKeys;
+    }
+    
+    public MutableEntityConfiguration addIdProperty(EntityProperty property) {
+        properties.add(property);
+        Column column = (Column) property.getExpression();
+        List<Column> expressionList = primaryKeys.get(column.getTable());
+        if (expressionList == null) {
+            expressionList = new ArrayList<Column>();
+            primaryKeys.put(column.getTable(), expressionList);
+        }
+        expressionList.add(column);
+        return this;
     }
 
 }

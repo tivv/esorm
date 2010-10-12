@@ -22,6 +22,8 @@ import java.sql.Connection;
 import java.util.*;
 
 import org.esorm.impl.*;
+import org.esorm.utils.ParentedList;
+import org.esorm.utils.ReadOnlyReverseIterable;
 
 /**
  * @author Vitalii Tymchyshyn

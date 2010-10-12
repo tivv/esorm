@@ -22,8 +22,9 @@ package org.esorm;
  * @author Vitalii Tymchyshyn
  *
  */
-public interface EntityManager
+public interface EntityBuilder<R>
 {
-    String getLocation(); 
-    <R> EntityBuilder<R> makeBuilder(); 
+    void prepare();
+    void setProperty(String name, Object value);
+    R build();
 }
