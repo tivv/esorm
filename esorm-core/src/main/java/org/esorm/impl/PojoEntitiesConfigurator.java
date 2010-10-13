@@ -55,7 +55,11 @@ implements EntitiesConfigurator
             return null;
         LazyManagedEntityConfigurationImpl rc = new LazyManagedEntityConfigurationImpl(name);
         for (Property property: new PropertySelectorImpl(entityClass).select()) {
-            rc.getProperties().add(new EntityPropertyImpl(property.name())); zzz
+            final EntityPropertyImpl entityProperty = new EntityPropertyImpl(property.name());
+            rc.getProperties().add(entityProperty); 
+            if (idPropertyName.equals(property.name())) {
+                rc.addIdProperty(entityProperty);
+            }
         }
         return rc;
     }

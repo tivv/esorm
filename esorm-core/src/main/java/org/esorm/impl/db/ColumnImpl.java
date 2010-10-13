@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.Map;
 
+import org.esorm.RegisteredExceptionWrapper;
 import org.esorm.entity.db.*;
 
 /**
@@ -48,9 +49,16 @@ implements Column
      * @see org.esorm.entity.db.ValueExpression#appendQuery(java.lang.Appendable, java.util.Map)
      */
     public void appendQuery(Appendable appendTo,
-                            Map<SelectExpression, String> tableNames) throws IOException
+                            Map<SelectExpression, String> tableNames)
     {
-        appendTo.append(tableNames.get(table)).append(".").append(name);
+        try
+        {
+            appendTo.append(tableNames.get(table)).append(".").append(name);
+        }
+        catch (IOException e)
+        {
+            throw new RegisteredExceptionWrapper(e);
+        }
 
     }
 

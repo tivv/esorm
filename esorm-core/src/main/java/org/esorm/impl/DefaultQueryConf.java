@@ -18,8 +18,12 @@
  */
 package org.esorm.impl;
 
-import java.util.Collections;
-import java.util.List;
+import java.io.IOException;
+import java.net.URL;
+import java.util.*;
+import java.util.Map.Entry;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import org.esorm.*;
 
@@ -30,7 +34,10 @@ import org.esorm.*;
 public class DefaultQueryConf
 implements QueryRunner
 {
+    private static final Logger LOG = Logger.getLogger(DefaultQueryConf.class.getName());
     public static final DefaultQueryConf INSTANCE = new DefaultQueryConf();
+    private static final Iterable<EntitiesConfigurator> configurators = loadServices(EntitiesConfigurator.class);
+    private static final Iterable<EntitiesManager> managers = loadServices(EntitiesManager.class);
     
     private DefaultQueryConf() {
         
@@ -99,8 +106,7 @@ implements QueryRunner
      */
     public Iterable<EntitiesConfigurator> getEntitiesConfiguratorsIterable()
     {
-        // TODO Add autoloading configurators
-        return Collections.emptyList();
+        return configurators;
     }
 
     /* (non-Javadoc)
@@ -108,8 +114,70 @@ implements QueryRunner
      */
     public Iterable<EntitiesManager> getEntitiesManagersIterable()
     {
-        // TODO Add autoloading managers
-        return Collections.emptyList();
+        return managers;
     }
 
+    public QueryConf customize()
+    {
+        return new QueryConf(this);
+    }
+    
+    @SuppressWarnings("unchecked")
+    private static <T> List<T> loadServices(Class<T> clazz) {
+        final Map<T, Double> services = new IdentityHashMap<T, Double>();
+        Enumeration<URL> resourceList;
+        try
+        {
+            resourceList = clazz.getClassLoader().getResources("/META-INF/services" + clazz.getName() + ".properties");
+        }
+        catch (IOException e)
+        {
+            throw new RegisteredExceptionWrapper("Could not load resources for " + clazz, e);
+        }
+        while(resourceList.hasMoreElements()) {
+            URL resource = resourceList.nextElement();
+            Properties properties = new Properties();
+            try
+            {
+                properties.load(resource.openStream());
+            }
+            catch (IOException e)
+            {
+                LOG.log(Level.WARNING, "Could not load service list for " + clazz + " from " + resource, e);
+            }
+            for (Entry<Object, Object> e : properties.entrySet()) {
+                T service;
+                try
+                {
+                    service = (T) Class.forName(e.getKey().toString()).newInstance();
+                }
+                catch (Exception ex)
+                {
+                    LOG.log(Level.WARNING, "Service " + e.getKey() + " defined in " + resource + 
+                        " could not be loaded and was skipped", ex);
+                    continue;
+                }
+                Double priority;
+                try {
+                    priority = Double.valueOf(e.getValue().toString());
+                } catch (NumberFormatException ex) {
+                    LOG.warning("Service " + e.getKey() + " defined in " + resource + 
+                        " has invalid priority " + e.getValue() + ": " + ex.getMessage() +
+                        " Default priority used");
+                    priority = 0.0;
+                }
+                services.put(service, priority);
+            }
+        }
+        List<T> rc = new ArrayList<T>(services.keySet());
+        Collections.sort(rc, new Comparator<T>()
+            {
+
+                public int compare(T o1, T o2)
+                {
+                    return services.get(o2).compareTo(services.get(o1));
+                }
+            });
+        return Collections.unmodifiableList(rc);
+    }
 }

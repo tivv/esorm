@@ -47,5 +47,7 @@ public interface QueryRunner
      * @return
      */
     public Iterable<EntitiesManager> getEntitiesManagersIterable();
+    
+    public QueryConf customize();
 }
 

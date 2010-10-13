@@ -324,4 +324,11 @@ public class QueryConf implements QueryRunner
     public EntityConfiguration getConfiguration(Class<?> configurationClass) {
         return getConfiguration(configurationClass.getSimpleName(), configurationClass.getName(), null);
     }
+
+    public QueryConf customize()
+    {
+        return new QueryConf(this);
+    }
+    
+    
 }

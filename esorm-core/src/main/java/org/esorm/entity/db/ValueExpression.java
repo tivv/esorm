@@ -18,6 +18,7 @@
  */
 package org.esorm.entity.db;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
@@ -29,7 +30,7 @@ public interface ValueExpression
 {
     Iterable<SelectExpression> getTables();
     
-    void appendQuery(Appendable appendTo, Map<SelectExpression, String> tableNames) throws Exception;
+    void appendQuery(Appendable appendTo, Map<SelectExpression, String> tableNames);
 
     boolean isInsertable();
     boolean isUpdateable();
