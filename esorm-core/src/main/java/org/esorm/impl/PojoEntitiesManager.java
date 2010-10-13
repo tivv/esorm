@@ -21,6 +21,7 @@ package org.esorm.impl;
 import java.util.Map;
 
 import org.esorm.*;
+import org.esorm.utils.PojoUtils;
 import org.jcloudlet.bean.Property;
 import org.jcloudlet.bean.impl.PropertySelectorImpl;
 
@@ -38,39 +39,16 @@ implements EntitiesManager
     public EntityManager createManager(EntityConfiguration newConfiguration,
                                        Iterable<String> implementationLocations)
     {
-        Class<?> entityClass = null;
-        for (String s : implementationLocations) {
-            entityClass = getClass(s);
-            if (entityClass != null)
-                return new PojoEntityManager(s, entityClass);
-            entityClass = getClass(s + "." + newConfiguration.getName());
-            if (entityClass != null)
-                return new PojoEntityManager(s, entityClass);
-        }
-        return null;
+        Class<?> entityClass = PojoUtils.resolveClass(newConfiguration.getName(), implementationLocations);
+        return entityClass != null ? new PojoEntityManager(entityClass) : null;
     }
 
-    /**
-     * @param s
-     * @return
-     */
-    private Class<?> getClass(String s)
-    {
-        try {
-            return Class.forName(s);
-        } catch (Exception e) {
-            return null;
-        }
-    }
-    
     public static class PojoEntityManager implements EntityManager {
-        private final String location;
         private final Class<?> clazz;
         private final Map<String, Property> properties;
 
-        private PojoEntityManager(String location, Class<?> clazz)
+        private PojoEntityManager(Class<?> clazz)
         {
-            this.location = location;
             this.clazz = clazz;
             this.properties = new PropertySelectorImpl(clazz).asMap();
         }
@@ -80,7 +58,7 @@ implements EntitiesManager
          */
         public String getLocation()
         {
-            return location;
+            return clazz.getName();
         }
 
         /* (non-Javadoc)

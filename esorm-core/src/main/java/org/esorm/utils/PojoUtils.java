@@ -16,15 +16,42 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with EsORM.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.esorm.entity.db;
+package org.esorm.utils;
+
+import org.esorm.impl.PojoEntitiesManager.PojoEntityManager;
 
 /**
  * @author Vitalii Tymchyshyn
  *
  */
-public interface Column extends ValueExpression
+public class PojoUtils
 {
-    SelectExpression getTable();
-    String getName();
+
+    /**
+     * @param s
+     * @return
+     */
+    public static Class<?> getClass(String s)
+    {
+        try {
+            return Class.forName(s);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+    
+    public static Class<?> resolveClass(String name, Iterable<String> locations) {
+        for (String s : locations) {
+            Class<?> entityClass;
+            entityClass = getClass(s);
+            if (entityClass != null)
+                return entityClass;
+            entityClass = getClass(s + "." + name);
+            if (entityClass != null)
+                return entityClass;
+        }
+        return null;
+        
+    }
 
 }

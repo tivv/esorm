@@ -33,17 +33,22 @@ import org.esorm.utils.IterableUtils;
  */
 public class MutableEntityConfigurationImpl implements MutableEntityConfiguration
 {
-    private final EntityConfiguration parent;
-    private EntityManager manager;
     private final String name;
+    private EntityManager manager;
     private String location;
     private List<EntityProperty> properties;
     private Map<SelectExpression, List<Column>> primaryKeys;
+    
+    public MutableEntityConfigurationImpl(String name) {
+        this.name = name;
+        this.primaryKeys = new HashMap<SelectExpression, List<Column>>();
+        this.properties = new ArrayList<EntityProperty>();
+    }
 
     public MutableEntityConfigurationImpl(String name, EntityConfiguration parent)
     {
-        this.parent = parent;
         this.name = name;
+        this.manager = parent.getManager();
         this.location = parent.getLocation();
         properties = IterableUtils.toList(parent.getProperties());
         primaryKeys = new HashMap<SelectExpression, List<Column>>();
@@ -55,7 +60,7 @@ public class MutableEntityConfigurationImpl implements MutableEntityConfiguratio
     
     public EntityManager getManager()
     {
-        return manager == null ? parent.getManager() : manager;
+        return manager;
     }
 
     public void setManager(EntityManager manager)
@@ -97,6 +102,11 @@ public class MutableEntityConfigurationImpl implements MutableEntityConfiguratio
         return primaryKeys;
     }
     
+    protected void setPrimaryKeys(Map<SelectExpression, List<Column>> primaryKeys)
+    {
+        this.primaryKeys = primaryKeys;
+    }
+
     public MutableEntityConfiguration addIdProperty(EntityProperty property) {
         properties.add(property);
         Column column = (Column) property.getExpression();

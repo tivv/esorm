@@ -29,7 +29,7 @@ public interface ValueExpression
 {
     Iterable<SelectExpression> getTables();
     
-    void appendQuery(Appendable appendTo, Map<SelectExpression, String> tableNames);
+    void appendQuery(Appendable appendTo, Map<SelectExpression, String> tableNames) throws Exception;
 
     boolean isInsertable();
     boolean isUpdateable();
