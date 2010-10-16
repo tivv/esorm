@@ -18,6 +18,7 @@
  */
 package org.esorm.impl;
 
+import java.io.Serializable;
 import java.lang.reflect.*;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -119,7 +120,8 @@ implements EntitiesManager
             }
             
         }
-        public static class PojoInvocationHandler implements InvocationHandler {
+        public static class PojoInvocationHandler implements InvocationHandler, Serializable {
+            private static final long serialVersionUID = 1;
             private Map<String, Object> propertyValues = new ConcurrentHashMap<String, Object>();
 
             /* (non-Javadoc)
