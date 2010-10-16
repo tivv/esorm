@@ -20,7 +20,10 @@ package org.esorm.impl;
 
 import org.esorm.EntitiesConfigurator;
 import org.esorm.LazyManagedEntityConfiguration;
+import org.esorm.entity.db.Table;
 import org.esorm.impl.PojoEntitiesManager.PojoEntityManager;
+import org.esorm.impl.db.ColumnImpl;
+import org.esorm.impl.db.TableImpl;
 import org.esorm.utils.PojoUtils;
 import org.jcloudlet.bean.Property;
 import org.jcloudlet.bean.criteria.PropertySelector;
@@ -54,8 +57,9 @@ implements EntitiesConfigurator
         if (entityClass == null)
             return null;
         LazyManagedEntityConfigurationImpl rc = new LazyManagedEntityConfigurationImpl(name);
+        Table table = new TableImpl(name);
         for (Property property: new PropertySelectorImpl(entityClass).select()) {
-            final EntityPropertyImpl entityProperty = new EntityPropertyImpl(property.name());
+            final EntityPropertyImpl entityProperty = new EntityPropertyImpl(property.name(), new ColumnImpl(table, property.name()) );
             rc.getProperties().add(entityProperty); 
             if (idPropertyName.equals(property.name())) {
                 rc.addIdProperty(entityProperty);

@@ -105,7 +105,7 @@ public class DataAccessorImpl implements DataAccessor
                             tablesInvolved.put(table, "t" + tableNum);
                         }
                     }
-                    if (num != 0)
+                    if (num != 1)
                         query.append(',');
                     expression.appendQuery(query, tablesInvolved);
                 }

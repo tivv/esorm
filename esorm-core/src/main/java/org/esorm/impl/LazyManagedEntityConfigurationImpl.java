@@ -55,6 +55,7 @@ implements LazyManagedEntityConfiguration
             e.setValue(Collections.unmodifiableList(e.getValue()));
         }
         setPrimaryKeys(Collections.unmodifiableMap(getPrimaryKeys()));
+        super.setManager(manager);
         fixed = true;
 
     }

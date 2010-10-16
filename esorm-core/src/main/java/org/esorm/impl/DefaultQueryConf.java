@@ -128,7 +128,7 @@ implements QueryRunner
         Enumeration<URL> resourceList;
         try
         {
-            resourceList = clazz.getClassLoader().getResources("/META-INF/services" + clazz.getName() + ".properties");
+            resourceList = clazz.getClassLoader().getResources("META-INF/services/" + clazz.getName() + ".properties");
         }
         catch (IOException e)
         {

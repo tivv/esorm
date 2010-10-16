@@ -269,7 +269,19 @@ public class QueryConf implements QueryRunner
                 return newConfiguration;        
             }
         }
-        throw new IllegalStateException("Can't fina manager for bean " + name + " under " + implementationLocations);
+        if (configurationLocation != null) {
+            //Try with same location (class name) as configuration
+            implementationLocations = configurationLocations;
+            for (EntitiesManager manager : getEntitiesManagersIterable()) {
+                EntityManager entityManager = manager.createManager(newConfiguration, implementationLocations);
+                if (entityManager != null) {
+                    newConfiguration.setManager(entityManager);
+                    getResolvedConfigurations().put(newConfiguration.getName(), newConfiguration);
+                    return newConfiguration;        
+                }
+            }
+        }
+        throw new IllegalStateException("Can't find manager for bean " + name + " under " + implementationLocations);
     }
 
     /**

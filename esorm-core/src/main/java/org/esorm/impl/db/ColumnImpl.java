@@ -37,6 +37,16 @@ implements Column
     private Iterable<SelectExpression> tables;
     private String name;
 
+    /**
+     * @param table
+     * @param name
+     */
+    public ColumnImpl(Table table, String name)
+    {
+        setTable(table);
+        setName(name);
+    }
+
     /* (non-Javadoc)
      * @see org.esorm.entity.db.ValueExpression#getTables()
      */
