@@ -189,6 +189,10 @@ public class QueryConf implements QueryRunner
         return this;
     }
     
+    public QueryConf entityLocation(Class entityLocation) {
+        return entityLocation(entityLocation.getName());
+    }
+    
     public QueryConf entityLocation(String entityLocation) {
         entityConfigurationLocation(entityLocation);
         return entityImplementationLocation(entityLocation);

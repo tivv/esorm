@@ -16,26 +16,33 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with EsORM.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.esorm;
-
-import java.sql.Connection;
-
-import javax.sql.DataSource;
-
-import org.esorm.impl.DataSourceConnectionProvider;
-import org.esorm.impl.FixedConnectionProvider;
+package org.esorm.usecase;
 
 /**
  * @author Vitalii Tymchyshyn
  *
  */
-public class EsormUtils
+public class EasyTable
 {
-    public static ConnectionProvider connect(Connection con) {
-        return new FixedConnectionProvider(con);
+    private long id;
+    private String name;
+    public long getId()
+    {
+        return id;
     }
+    public void setId(long id)
+    {
+        this.id = id;
+    }
+    public String getName()
+    {
+        return name;
+    }
+    public void setName(String name)
+    {
+        this.name = name;
+    }
+    
+    
 
-    public static ConnectionProvider connect(DataSource ds) {
-        return new DataSourceConnectionProvider(ds);
-    }
 }

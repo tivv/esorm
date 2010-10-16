@@ -16,26 +16,39 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with EsORM.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.esorm;
-
-import java.sql.Connection;
+package org.esorm.usecase;
 
 import javax.sql.DataSource;
 
-import org.esorm.impl.DataSourceConnectionProvider;
-import org.esorm.impl.FixedConnectionProvider;
+import static org.esorm.EsormUtils.*;
+import org.esorm.QueryConf;
+import org.junit.Assert;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.unitils.UnitilsJUnit4TestClassRunner;
+import org.unitils.database.annotations.TestDataSource;
+import org.unitils.dbunit.annotation.DataSet;
 
 /**
  * @author Vitalii Tymchyshyn
  *
  */
-public class EsormUtils
+@RunWith(UnitilsJUnit4TestClassRunner.class)
+@DataSet
+public class QueryConfGetTest
 {
-    public static ConnectionProvider connect(Connection con) {
-        return new FixedConnectionProvider(con);
+    @TestDataSource
+    DataSource dataSource;
+    
+    @Test
+    public void test() {
+        QueryConf conf = new QueryConf()
+            .connectionProvider(connect(dataSource))
+            .entityLocation(EasyTable.class);
+        EasyTable res = conf.get(EasyTable.class, 1L);
+        Assert.assertEquals(1l, res.getId());
+        Assert.assertEquals("test", res.getName());
     }
-
-    public static ConnectionProvider connect(DataSource ds) {
-        return new DataSourceConnectionProvider(ds);
-    }
+    
+     
 }
