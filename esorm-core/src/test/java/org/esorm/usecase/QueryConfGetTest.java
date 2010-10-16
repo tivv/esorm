@@ -43,8 +43,7 @@ public class QueryConfGetTest
     @Test
     public void test() {
         QueryConf conf = new QueryConf()
-            .connectionProvider(connect(dataSource))
-            .entityLocation(EasyTable.class);
+            .connectionProvider(connect(dataSource));
         EasyTable res = conf.get(EasyTable.class, 1L);
         Assert.assertEquals(1l, res.getId());
         Assert.assertEquals("test", res.getName());
