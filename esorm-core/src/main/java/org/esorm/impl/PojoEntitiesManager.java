@@ -18,7 +18,9 @@
  */
 package org.esorm.impl;
 
+import java.lang.reflect.*;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.esorm.*;
 import org.esorm.utils.PojoUtils;
@@ -32,7 +34,6 @@ import org.jcloudlet.bean.impl.PropertySelectorImpl;
 public class PojoEntitiesManager
 implements EntitiesManager
 {
-
     /* (non-Javadoc)
      * @see org.esorm.EntitiesManager#createManager(org.esorm.EntityConfiguration, java.lang.Iterable)
      */
@@ -79,7 +80,11 @@ implements EntitiesManager
             {
                 try
                 {
-                    bean = (R) clazz.newInstance();
+                    if (clazz.isInterface()) {
+                        bean = (R) Proxy.newProxyInstance(clazz.getClassLoader(), new Class[] {clazz}, new PojoInvocationHandler());
+                    } else {
+                        bean = (R) clazz.newInstance();
+                    }
                 }
                 catch (RuntimeException e) {
                     throw e;
@@ -111,6 +116,39 @@ implements EntitiesManager
                 R rc = bean;
                 bean = null;
                 return rc;
+            }
+            
+        }
+        public static class PojoInvocationHandler implements InvocationHandler {
+            private Map<String, Object> propertyValues = new ConcurrentHashMap<String, Object>();
+
+            /* (non-Javadoc)
+             * @see java.lang.reflect.InvocationHandler#invoke(java.lang.Object, java.lang.reflect.Method, java.lang.Object[])
+             */
+            public Object invoke(Object proxy, Method method, Object[] args)
+            throws Throwable
+            {
+                if (args != null && args.length > 1)
+                    throw new UnsupportedOperationException("Method " + method + " is neither setter nor getter: too many arguments");
+                String propertyName = method.getName();
+                if (propertyName.startsWith("get") || propertyName.startsWith("set"))
+                    propertyName = getPropertyName(propertyName, 3);
+                else if (propertyName.startsWith("is"))
+                    propertyName = getPropertyName(propertyName, 2);
+                if (args != null && args.length == 1) {
+                    propertyValues.put(propertyName, args[0]);
+                    return proxy;
+                }
+                return propertyValues.get(propertyName);
+            }
+
+            private String getPropertyName(String methodName, int prefixLength)
+            {
+                if (methodName.length() == prefixLength || 
+                    Character.isLowerCase(methodName.charAt(prefixLength)))
+                    return methodName.substring(prefixLength);
+                return Character.toLowerCase(methodName.charAt(prefixLength)) +
+                    methodName.substring(prefixLength + 1);
             }
             
         }

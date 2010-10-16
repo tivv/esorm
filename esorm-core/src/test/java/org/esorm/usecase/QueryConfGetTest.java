@@ -41,7 +41,7 @@ public class QueryConfGetTest
     DataSource dataSource;
     
     @Test
-    public void test() {
+    public void testClass() {
         QueryConf conf = new QueryConf()
             .connectionProvider(connect(dataSource));
         EasyTable res = conf.get(EasyTable.class, 1L);
@@ -49,5 +49,14 @@ public class QueryConfGetTest
         Assert.assertEquals("test", res.getName());
     }
     
+    @Test
+    public void testInterface() {
+        QueryConf conf = new QueryConf()
+            .connectionProvider(connect(dataSource));
+        EasyTableIntf res = conf.get(conf.getConfiguration(
+            "EasyTable", EasyTableIntf.class.getName(), null), 1L);
+        Assert.assertEquals(1l, res.getId());
+        Assert.assertEquals("test", res.getName());
+    }
      
 }
