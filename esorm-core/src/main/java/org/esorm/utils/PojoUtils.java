@@ -40,18 +40,38 @@ public class PojoUtils
         }
     }
     
-    public static Class<?> resolveClass(String name, Iterable<String> locations) {
+    public static Class<?> resolveClass(String name, Iterable<String> locations, boolean locationOverride) {
+        
+        return resolveClass(name, locations, locationOverride, ClassNameFilter.INSTANCE);
+    }
+    public static Class<?> resolveClass(String name, Iterable<String> locations, boolean locationOverride, NameFilter filter) {
         for (String s : locations) {
             Class<?> entityClass;
             entityClass = getClass(s);
-            if (entityClass != null)
+            if (entityClass != null && filter.accept(entityClass, name, locationOverride))
                 return entityClass;
             entityClass = getClass(s + "." + name);
-            if (entityClass != null)
+            if (entityClass != null && filter.accept(entityClass, name, locationOverride))
                 return entityClass;
         }
         return null;
         
     }
+    
+    public interface NameFilter {
+        boolean accept(Class<?> clazz, String name, boolean locationOverride);
+    }
+    
+    public static class ClassNameFilter implements NameFilter {
+        public static final ClassNameFilter INSTANCE = new ClassNameFilter();
 
+        /* (non-Javadoc)
+         * @see org.esorm.utils.PojoUtils.NameFilter#accept(java.lang.Class, java.lang.String, boolean)
+         */
+        public boolean accept(Class<?> clazz, String name,
+                              boolean locationOverride)
+        {
+            return locationOverride || clazz.getSimpleName().equals(name);
+        }
+    }
 }

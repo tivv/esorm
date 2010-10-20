@@ -37,11 +37,11 @@ public class MutableEntityConfigurationImpl implements MutableEntityConfiguratio
     private EntityManager manager;
     private String location;
     private List<EntityProperty> properties;
-    private Map<SelectExpression, List<Column>> primaryKeys;
+    private Map<SelectExpression, List<Column>> idColumns;
     
     public MutableEntityConfigurationImpl(String name) {
         this.name = name;
-        this.primaryKeys = new HashMap<SelectExpression, List<Column>>();
+        this.idColumns = new HashMap<SelectExpression, List<Column>>();
         this.properties = new ArrayList<EntityProperty>();
     }
 
@@ -51,9 +51,9 @@ public class MutableEntityConfigurationImpl implements MutableEntityConfiguratio
         this.manager = parent.getManager();
         this.location = parent.getLocation();
         properties = IterableUtils.toList(parent.getProperties());
-        primaryKeys = new HashMap<SelectExpression, List<Column>>();
-        for (Entry<SelectExpression, ? extends Iterable<Column>> e : parent.getPrimaryKeys().entrySet()) {
-            primaryKeys.put(e.getKey(), IterableUtils.toList(e.getValue()));
+        idColumns = new HashMap<SelectExpression, List<Column>>();
+        for (Entry<SelectExpression, ? extends Iterable<Column>> e : parent.getIdColumns().entrySet()) {
+            idColumns.put(e.getKey(), IterableUtils.toList(e.getValue()));
         }
         
     }
@@ -97,23 +97,29 @@ public class MutableEntityConfigurationImpl implements MutableEntityConfiguratio
     /* (non-Javadoc)
      * @see org.esorm.EntityConfiguration#getPrimaryKeys()
      */
-    public Map<SelectExpression, List<Column>> getPrimaryKeys()
+    public Map<SelectExpression, List<Column>> getIdColumns()
     {
-        return primaryKeys;
+        return idColumns;
     }
     
-    protected void setPrimaryKeys(Map<SelectExpression, List<Column>> primaryKeys)
+    protected void setIdColumns(Map<SelectExpression, List<Column>> idColumns)
     {
-        this.primaryKeys = primaryKeys;
+        this.idColumns = idColumns;
     }
 
     public MutableEntityConfiguration addIdProperty(EntityProperty property) {
         properties.add(property);
         Column column = (Column) property.getExpression();
-        List<Column> expressionList = primaryKeys.get(column.getTable());
+        return addIdColumn(column);
+    }
+
+    public MutableEntityConfiguration addIdColumn(Column column)
+    {
+        final SelectExpression table = column.getTable();
+        List<Column> expressionList = idColumns.get(table);
         if (expressionList == null) {
             expressionList = new ArrayList<Column>();
-            primaryKeys.put(column.getTable(), expressionList);
+            idColumns.put(table, expressionList);
         }
         expressionList.add(column);
         return this;

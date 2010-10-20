@@ -29,8 +29,18 @@ public interface EntitiesConfigurator
      * @param name
      * @param configurationLocations
      * @return
+     * @deprecated Use {@link #resolveConfiguration(String,Iterable<String>,boolean)} instead
      */
     LazyManagedEntityConfiguration resolveConfiguration(String name,
                                              Iterable<String> configurationLocations);
+
+    /**
+     * @param name
+     * @param configurationLocations
+     * @param locationOverride TODO
+     * @return
+     */
+    LazyManagedEntityConfiguration resolveConfiguration(String name,
+                                             Iterable<String> configurationLocations, boolean locationOverride);
 
 }

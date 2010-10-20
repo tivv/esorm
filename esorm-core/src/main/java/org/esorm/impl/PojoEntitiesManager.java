@@ -38,10 +38,23 @@ implements EntitiesManager
     /* (non-Javadoc)
      * @see org.esorm.EntitiesManager#createManager(org.esorm.EntityConfiguration, java.lang.Iterable)
      */
+    /**
+     * @deprecated Use {@link #createManager(EntityConfiguration,Iterable<String>,boolean)} instead
+     */
     public EntityManager createManager(EntityConfiguration newConfiguration,
                                        Iterable<String> implementationLocations)
     {
-        Class<?> entityClass = PojoUtils.resolveClass(newConfiguration.getName(), implementationLocations);
+        return createManager(newConfiguration, implementationLocations,
+            false);
+    }
+
+    /* (non-Javadoc)
+     * @see org.esorm.EntitiesManager#createManager(org.esorm.EntityConfiguration, java.lang.Iterable)
+     */
+    public EntityManager createManager(EntityConfiguration newConfiguration,
+                                       Iterable<String> implementationLocations, boolean locationOverride)
+    {
+        Class<?> entityClass = PojoUtils.resolveClass(newConfiguration.getName(), implementationLocations, locationOverride);
         return entityClass != null ? new PojoEntityManager(entityClass) : null;
     }
 

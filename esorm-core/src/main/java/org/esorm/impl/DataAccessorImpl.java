@@ -115,7 +115,7 @@ public class DataAccessorImpl implements DataAccessor
             //TODO - complex primary key by id / name
             query.append(" from ");
             Iterable<Column> firstTablePK = null;
-            Map<SelectExpression, ? extends Iterable<Column>> primaryKeys = configuration.getPrimaryKeys();
+            Map<SelectExpression, ? extends Iterable<Column>> primaryKeys = configuration.getIdColumns();
             for (Entry<SelectExpression, String> e : tablesInvolved.entrySet()) {
                 if (firstTablePK != null)
                     query.append(" join ");

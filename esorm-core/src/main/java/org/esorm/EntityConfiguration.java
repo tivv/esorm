@@ -33,5 +33,5 @@ public interface EntityConfiguration
     String getName();
     String getLocation();
     Iterable<EntityProperty> getProperties();
-    Map<SelectExpression, ? extends Iterable<Column>> getPrimaryKeys();
+    Map<SelectExpression, ? extends Iterable<Column>> getIdColumns();
 }

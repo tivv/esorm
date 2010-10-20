@@ -16,37 +16,33 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with EsORM.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.esorm.impl;
+package org.esorm.jpa;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import javax.persistence.Entity;
+import javax.persistence.SecondaryTable;
 
 import org.esorm.EntitiesConfigurator;
 import org.esorm.LazyManagedEntityConfiguration;
+import org.esorm.entity.EntityProperty;
 import org.esorm.entity.db.Table;
-import org.esorm.impl.PojoEntitiesManager.PojoEntityManager;
+import org.esorm.impl.*;
 import org.esorm.impl.db.ColumnImpl;
 import org.esorm.impl.db.TableImpl;
 import org.esorm.utils.PojoUtils;
+import org.esorm.utils.PojoUtils.NameFilter;
 import org.jcloudlet.bean.Property;
-import org.jcloudlet.bean.criteria.PropertySelector;
 import org.jcloudlet.bean.impl.PropertySelectorImpl;
 
 /**
  * @author Vitalii Tymchyshyn
  *
  */
-public class PojoEntitiesConfigurator
+public class JpaEntitiesConfigurator
 implements EntitiesConfigurator
 {
-    private String idPropertyName;
-    
-    public PojoEntitiesConfigurator(String idPropertyName)
-    {
-        this.idPropertyName = idPropertyName;
-    }
-    
-    public PojoEntitiesConfigurator() {
-        this("id");
-    }
-
     /* (non-Javadoc)
      * @see org.esorm.EntitiesConfigurator#resolveConfiguration(java.lang.String, java.lang.Iterable)
      */
@@ -65,22 +61,57 @@ implements EntitiesConfigurator
     public LazyManagedEntityConfiguration resolveConfiguration(String name,
                                                                Iterable<String> configurationLocations, boolean locationOverride)
     {
-        Class<?> entityClass = PojoUtils.resolveClass(name, configurationLocations, locationOverride);
+        Class<?> entityClass = PojoUtils.resolveClass(name, configurationLocations, locationOverride, NAME_FILTER);
         if (entityClass == null)
             return null;
         LazyManagedEntityConfigurationImpl rc = new LazyManagedEntityConfigurationImpl(name);
-        Table table = new TableImpl(name);
+        rc.setLocation(entityClass.getName());
+        Map<String, Table> tables = getTables(entityClass);
+        EntityProperty defaultIdProperty = null;
         for (Property property: new PropertySelectorImpl(entityClass).select()) {
             final EntityPropertyImpl entityProperty = new EntityPropertyImpl(property.name(), new ColumnImpl(table, property.name()) );
             rc.getProperties().add(entityProperty); 
-            if (idPropertyName.equals(property.name())) {
-                rc.addIdProperty(entityProperty);
+            if ("id".equals(property.name())) {
+                defaultIdProperty = entityProperty;
             }
         }
+        if (rc.getIdColumns().isEmpty() && defaultIdProperty != null)
+            rc.addIdProperty(defaultIdProperty);
         return rc;
     }
 
+    private Map<String, Table> getTables(Class<?> entityClass)
+    {
+        Map<String, Table> rc = new HashMap<String, Table>();
+        javax.persistence.Table primaryTable = 
+            entityClass.getAnnotation(javax.persistence.Table.class);
+        if (primaryTable != null) {
+            
+        } else {
+            rc.put(entityClass.getSimpleName(), new TableImpl(entityClass.getSimpleName()));
+        }
+        SecondaryTable secondaryTable = entityClass.getAnnotation(SecondaryTable.class);
+        if (secondaryTable != null) {
+            //TODO            
+        }
+            
+        return rc;
+    }
 
-
-    
+    private static NameFilter NAME_FILTER = new NameFilter()
+    {
+        
+        public boolean accept(Class<?> clazz, String name,
+                              boolean locationOverride)
+        {
+            final Entity entityAnn = clazz.getAnnotation(Entity.class);
+            if (entityAnn == null)
+                return false;
+            if (locationOverride)
+                return true;
+            if ("".equals(entityAnn.name()))
+                return clazz.getSimpleName().equals(name);
+            return entityAnn.name().equals(name);
+        }
+    };
 }

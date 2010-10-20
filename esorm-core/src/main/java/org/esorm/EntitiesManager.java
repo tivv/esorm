@@ -29,8 +29,18 @@ public interface EntitiesManager
      * @param newConfiguration
      * @param implementationLocations
      * @return
+     * @deprecated Use {@link #createManager(EntityConfiguration,Iterable<String>,boolean)} instead
      */
     EntityManager createManager(EntityConfiguration newConfiguration,
                                 Iterable<String> implementationLocations);
+
+    /**
+     * @param newConfiguration
+     * @param implementationLocations
+     * @param locationOverride TODO
+     * @return
+     */
+    EntityManager createManager(EntityConfiguration newConfiguration,
+                                Iterable<String> implementationLocations, boolean locationOverride);
 
 }

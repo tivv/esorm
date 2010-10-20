@@ -251,7 +251,7 @@ public class QueryConf implements QueryRunner
         LazyManagedEntityConfiguration newConfiguration = null;
         for (EntitiesConfigurator configurator : getEntitiesConfiguratorsIterable()) {
             //TODO - Error handling
-            newConfiguration = configurator.resolveConfiguration(name, configurationLocations);
+            newConfiguration = configurator.resolveConfiguration(name, configurationLocations, configurationLocation != null);
             if (newConfiguration != null) {
                 break;
             }
@@ -262,7 +262,7 @@ public class QueryConf implements QueryRunner
         Iterable<String> implementationLocations = implementationLocation == null ? getEntityImplementationLocations() : 
             Collections.singleton(implementationLocation);
         for (EntitiesManager manager : getEntitiesManagersIterable()) {
-            EntityManager entityManager = manager.createManager(newConfiguration, implementationLocations);
+            EntityManager entityManager = manager.createManager(newConfiguration, implementationLocations, implementationLocation != null);
             if (entityManager != null) {
                 newConfiguration.setManager(entityManager);
                 getResolvedConfigurations().put(newConfiguration.getName(), newConfiguration);
@@ -273,7 +273,7 @@ public class QueryConf implements QueryRunner
             //Try with same location (class name) as configuration
             implementationLocations = configurationLocations;
             for (EntitiesManager manager : getEntitiesManagersIterable()) {
-                EntityManager entityManager = manager.createManager(newConfiguration, implementationLocations);
+                EntityManager entityManager = manager.createManager(newConfiguration, implementationLocations, true);
                 if (entityManager != null) {
                     newConfiguration.setManager(entityManager);
                     getResolvedConfigurations().put(newConfiguration.getName(), newConfiguration);

@@ -30,15 +30,20 @@ import org.esorm.entity.db.Table;
 public class TableImpl
 implements Table
 {
-    private final String schema, name;
+    private final String catalog,schema, name;
 
     public TableImpl(String name)
     {
         this(null, name);
     }
     
-    public TableImpl(String schema, String name)
+    public TableImpl(String schema, String name) {
+        this(null, schema, name);
+    }
+    
+    public TableImpl(String catalog, String schema, String name)
     {
+        this.catalog = catalog;
         this.schema = schema;
         this.name = name;
     }
@@ -50,6 +55,10 @@ implements Table
     {
         try
         {
+            if (catalog != null) {
+                appendTo.append(catalog);
+                appendTo.append('.');
+            }
             if (schema != null) {
                 appendTo.append(schema);
                 appendTo.append('.');

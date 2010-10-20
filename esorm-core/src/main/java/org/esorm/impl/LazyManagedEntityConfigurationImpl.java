@@ -51,10 +51,10 @@ implements LazyManagedEntityConfiguration
     {
         checkNotFixed();
         setProperties(Collections.unmodifiableList(getProperties()));
-        for (Entry<SelectExpression, List<Column>> e :getPrimaryKeys().entrySet()) {
+        for (Entry<SelectExpression, List<Column>> e :getIdColumns().entrySet()) {
             e.setValue(Collections.unmodifiableList(e.getValue()));
         }
-        setPrimaryKeys(Collections.unmodifiableMap(getPrimaryKeys()));
+        setIdColumns(Collections.unmodifiableMap(getIdColumns()));
         super.setManager(manager);
         fixed = true;
 
@@ -82,10 +82,10 @@ implements LazyManagedEntityConfiguration
         super.setProperties(properties);
     }
 
-    protected void setPrimaryKeys(Map<SelectExpression, List<Column>> primaryKeys)
+    protected void setIdColumns(Map<SelectExpression, List<Column>> primaryKeys)
     {
         checkNotFixed();
-        super.setPrimaryKeys(primaryKeys);
+        super.setIdColumns(primaryKeys);
     }
 
 }
