@@ -76,6 +76,11 @@ implements EntitiesConfigurator
         tables.put(primaryTableName, primaryTable);
         addSecondaryTable(entityClass, tables, idProperties);
         addSecondaryTables(entityClass, tables, idProperties);
+        for (List<PropertyBuilder> e: properties.values()) {
+            for (PropertyBuilder property: e) {
+                rc.getProperties().add(property.getEntityProperty());
+            }
+        }
         return rc;
     }
 
