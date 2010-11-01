@@ -86,6 +86,7 @@ implements EntitiesManager
         
         public class PojoEntityBuilder<R> implements EntityBuilder<R> {
             private R bean;
+            private PojoInvocationHandler invocationHandler;
 
             /* (non-Javadoc)
              * @see org.esorm.EntityBuilder#prepare()
@@ -95,7 +96,8 @@ implements EntitiesManager
                 try
                 {
                     if (clazz.isInterface()) {
-                        bean = (R) Proxy.newProxyInstance(clazz.getClassLoader(), new Class[] {clazz}, new PojoInvocationHandler());
+                        invocationHandler = new PojoInvocationHandler();
+                        bean = (R) Proxy.newProxyInstance(clazz.getClassLoader(), new Class[] {clazz}, invocationHandler);
                     } else {
                         bean = (R) clazz.newInstance();
                     }
@@ -118,7 +120,10 @@ implements EntitiesManager
                 Property property = properties.get(name);
                 if (property == null)
                     throw new IllegalArgumentException("Class " + clazz.getName() + " do not have property " + name);
-                property.set(bean, value);
+                if (invocationHandler != null)
+                    invocationHandler.propertyValues.put(name, value);
+                else
+                    property.set(bean, value);
                 
             }
 
@@ -129,6 +134,7 @@ implements EntitiesManager
             {
                 R rc = bean;
                 bean = null;
+                invocationHandler = null;
                 return rc;
             }
             
