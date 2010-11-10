@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified" xmlns="PUBLIC"
+            targetNamespace="PUBLIC">
+    <xsd:element name="EASYTABLE" type="EASYTABLE__type"/>
+    <xsd:element name="DBMAINTAIN_SCRIPTS" type="DBMAINTAIN_SCRIPTS__type"/>
+    <xsd:complexType name="EASYTABLE__type">
+        <xsd:attribute name="NAME" use="optional"/>
+        <xsd:attribute name="IDENTIFIER" use="optional"/>
+    </xsd:complexType>
+    <xsd:complexType name="DBMAINTAIN_SCRIPTS__type">
+        <xsd:attribute name="FILE_NAME" use="optional"/>
+        <xsd:attribute name="EXECUTED_AT" use="optional"/>
+        <xsd:attribute name="VERSION" use="optional"/>
+        <xsd:attribute name="SUCCEEDED" use="optional"/>
+        <xsd:attribute name="CHECKSUM" use="optional"/>
+        <xsd:attribute name="FILE_LAST_MODIFIED_AT" use="optional"/>
+    </xsd:complexType>
+</xsd:schema>

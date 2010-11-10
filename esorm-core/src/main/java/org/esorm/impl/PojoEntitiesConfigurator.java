@@ -1,5 +1,5 @@
 /**
- * 
+ *
  * Copyright 2010 Vitalii Tymchyshyn
  * This file is part of EsORM.
  *
@@ -21,28 +21,23 @@ package org.esorm.impl;
 import org.esorm.EntitiesConfigurator;
 import org.esorm.LazyManagedEntityConfiguration;
 import org.esorm.entity.db.Table;
-import org.esorm.impl.PojoEntitiesManager.PojoEntityManager;
 import org.esorm.impl.db.ColumnImpl;
 import org.esorm.impl.db.TableImpl;
 import org.esorm.utils.PojoUtils;
 import org.jcloudlet.bean.Property;
-import org.jcloudlet.bean.criteria.PropertySelector;
 import org.jcloudlet.bean.impl.PropertySelectorImpl;
 
 /**
  * @author Vitalii Tymchyshyn
- *
  */
 public class PojoEntitiesConfigurator
-implements EntitiesConfigurator
-{
+        implements EntitiesConfigurator {
     private String idPropertyName;
-    
-    public PojoEntitiesConfigurator(String idPropertyName)
-    {
+
+    public PojoEntitiesConfigurator(String idPropertyName) {
         this.idPropertyName = idPropertyName;
     }
-    
+
     public PojoEntitiesConfigurator() {
         this("id");
     }
@@ -50,29 +45,31 @@ implements EntitiesConfigurator
     /* (non-Javadoc)
      * @see org.esorm.EntitiesConfigurator#resolveConfiguration(java.lang.String, java.lang.Iterable)
      */
+
     /**
      * @deprecated Use {@link #resolveConfiguration(String,Iterable<String>,boolean)} instead
      */
     public LazyManagedEntityConfiguration resolveConfiguration(String name,
-                                                               Iterable<String> configurationLocations)
-    {
+                                                               Iterable<String> configurationLocations) {
         return resolveConfiguration(name, configurationLocations, false);
     }
 
     /* (non-Javadoc)
      * @see org.esorm.EntitiesConfigurator#resolveConfiguration(java.lang.String, java.lang.Iterable)
      */
+
     public LazyManagedEntityConfiguration resolveConfiguration(String name,
-                                                               Iterable<String> configurationLocations, boolean locationOverride)
-    {
+                                                               Iterable<String> configurationLocations, boolean locationOverride) {
         Class<?> entityClass = PojoUtils.resolveClass(name, configurationLocations, locationOverride);
         if (entityClass == null)
             return null;
         LazyManagedEntityConfigurationImpl rc = new LazyManagedEntityConfigurationImpl(name);
         Table table = new TableImpl(name);
-        for (Property property: new PropertySelectorImpl(entityClass).select()) {
-            final EntityPropertyImpl entityProperty = new EntityPropertyImpl(property.name(), new ColumnImpl(table, property.name()) );
-            rc.getProperties().add(entityProperty); 
+        for (Property property : new PropertySelectorImpl(entityClass).select()) {
+            if ((property.getter() != null) && (property.getter().getDeclaringClass() == Object.class))
+                continue;
+            final EntityPropertyImpl entityProperty = new EntityPropertyImpl(property.name(), new ColumnImpl(table, property.name()));
+            rc.getProperties().add(entityProperty);
             if (idPropertyName.equals(property.name())) {
                 rc.addIdProperty(entityProperty);
             }
@@ -81,6 +78,4 @@ implements EntitiesConfigurator
     }
 
 
-
-    
 }

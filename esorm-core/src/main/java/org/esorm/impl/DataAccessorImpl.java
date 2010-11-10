@@ -1,5 +1,5 @@
 /**
- * 
+ *
  * Copyright 2010 Vitalii Tymchyshyn
  * This file is part of EsORM.
  *
@@ -18,37 +18,41 @@
  */
 package org.esorm.impl;
 
-import java.sql.*;
-import java.util.*;
-import java.util.Map.Entry;
+import org.esorm.*;
+import org.esorm.entity.EntityProperty;
+import org.esorm.entity.db.ValueExpression;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.esorm.*;
-import org.esorm.entity.EntityProperty;
-import org.esorm.entity.db.*;
-
 /**
  * @author Vitalii Tymchyshyn
- *
  */
-public class DataAccessorImpl implements DataAccessor
-{
+public class DataAccessorImpl implements DataAccessor {
     public static final DataAccessorImpl INSTANCE = new DataAccessorImpl();
-    
+
     private static final GetWorker<Object> GET_WORKER = new GetWorker<Object>();
     private static final Logger LOG = Logger.getLogger(DataAccessorImpl.class.getName());
 
     /* (non-Javadoc)
      * @see org.esorm.DataAccessor#get(org.esorm.QueryRunner, org.esorm.EntityDescription, java.lang.Object)
      */
+
     @SuppressWarnings("unchecked")
-    public <T> T get(QueryRunner queryRunner, EntityConfiguration configuration,
-                     Object id)
-    {
-        return (T)run(GET_WORKER, queryRunner, configuration, id);
+    public <T> T get(QueryRunner queryRunner, ParsedQuery query,
+                     Object... params) {
+        if (query.getType() != ParsedQuery.Type.Fetch)
+            throw new IllegalArgumentException("Fetch query expected");
+        return (T) run(GET_WORKER, queryRunner, query, params);
     }
-    
+
     private <T, P1, P2> T run(Worker<T, P1, P2> worker, QueryRunner queryRunner, P1 param1, P2 param2) {
         Connection con = null;
         boolean hadError = true;
@@ -64,107 +68,47 @@ public class DataAccessorImpl implements DataAccessor
             if (con != null) {
                 try {
                     queryRunner.getConnectionProvider().returnConnection(con);
-                } catch (Exception e) 
-                {
+                } catch (Exception e) {
                     if (!hadError) {
                         queryRunner.getErrorHandler().handle(e);
                     } else {
-                        LOG.log(Level.WARNING , "Second exception on connection return dropped", e);
+                        LOG.log(Level.WARNING, "Second exception on connection return dropped", e);
                     }
                 }
             }
         }
     }
-    
+
     private interface Worker<R, P1, P2> {
         R run(Connection con, QueryRunner queryRunner, P1 param1, P2 param2) throws SQLException;
     }
 
-    private static class GetWorker<R> implements Worker<R, EntityConfiguration, Object>
-    {
+    private static class GetWorker<R> implements Worker<R, ParsedQuery, Object[]> {
         /* (non-Javadoc)
          * @see org.esorm.impl.DataAccessorImpl.Worker#run(java.sql.Connection, org.esorm.QueryRunner, java.lang.Object, java.lang.Object)
          */
+
         public R run(Connection con, QueryRunner queryRunner,
-                     EntityConfiguration configuration, Object id)
-        throws SQLException
-        {
-            StringBuilder query = new StringBuilder();
-            Map<SelectExpression, String> tablesInvolved = new HashMap<SelectExpression, String>();
-            Map<ValueExpression, Integer> resultColumns =  new HashMap<ValueExpression, Integer>(); 
-            query.append("select ");
-            Iterable<EntityProperty> properties = configuration.getProperties();
-            for (EntityProperty property : properties) {
-                ValueExpression expression = property.getExpression();
-                if (!resultColumns.containsKey(expression)) {
-                    int num = resultColumns.size() + 1;
-                    resultColumns.put(expression, num);
-                    for (SelectExpression table : expression.getTables()) {
-                        if (!tablesInvolved.containsKey(table)) {
-                            int tableNum = tablesInvolved.size() + 1;
-                            tablesInvolved.put(table, "t" + tableNum);
-                        }
-                    }
-                    if (num != 1)
-                        query.append(',');
-                    expression.appendQuery(query, tablesInvolved);
-                }
-            }
-            if (resultColumns.isEmpty())
-                throw new IllegalArgumentException("Nothing to select for " + configuration.getName());
-            //TODO - complex primary key by id / name
-            query.append(" from ");
-            Iterable<Column> firstTablePK = null;
-            Map<SelectExpression, ? extends Iterable<Column>> primaryKeys = configuration.getIdColumns();
-            for (Entry<SelectExpression, String> e : tablesInvolved.entrySet()) {
-                if (firstTablePK != null)
-                    query.append(" join ");
-                e.getKey().appendQuery(query, e.getValue());
-                Iterable<Column> primaryKey = primaryKeys.get(e.getKey());
-                if (primaryKey == null)
-                    throw new IllegalStateException("Table " + e.getKey() + " does not have primary key specified");
-                if (firstTablePK == null) {
-                    firstTablePK = primaryKey;
-                } else {
-                    Iterator<Column> primaryKeyIterator = primaryKey.iterator();
-                    String toAppend = " on ";
-                    for (Column firstColumn : firstTablePK) {
-                        //TODO add .hasNext check
-                        Column secondColumn = primaryKeyIterator.next();
-                        query.append(toAppend);
-                        toAppend = " and ";
-                        firstColumn.appendQuery(query, tablesInvolved);
-                        query.append("=");
-                        secondColumn.appendQuery(query, tablesInvolved);
-                    }
-                    //TODO add .hasNext check
-                }
-            }
-            String toAppend = " where ";
-            for(Column pkColumn : firstTablePK) {
-                query.append(toAppend);
-                toAppend = " and ";
-                pkColumn.appendQuery(query, tablesInvolved);
-                query.append("=?");
-            }
-            PreparedStatement stmt = con.prepareStatement(query.toString());
+                     ParsedQuery query, Object[] params)
+                throws SQLException {
+            EntityConfiguration configuration = query.getResultConfiguration();
+            PreparedStatement stmt = con.prepareStatement(query.getSQL());
             ResultSet rs = null;
-            List<Object> parsedId = parseId(id);
+            List<Object> parsedId = parseId(params);
             boolean hadError = true;
             try {
-                int i = 0;
-                for(Column pkColumn : firstTablePK) {
+                for (int i = 0; i < parsedId.size(); i++) {
                     stmt.setObject(i + 1, parsedId.get(i));
-                    i++;
                 }
                 rs = stmt.executeQuery();
                 if (!rs.next())
                     return null;
+                Map<ValueExpression, Integer> resultColumns = query.getResultMapping();
                 EntityBuilder<R> entityBuilder = configuration.getManager().makeBuilder();
                 entityBuilder.prepare();
-                for (EntityProperty property: properties) {
-                    entityBuilder.setProperty(property.getName(), 
-                        rs.getObject(resultColumns.get(property.getExpression())));
+                for (EntityProperty property : configuration.getProperties()) {
+                    entityBuilder.setProperty(property.getName(),
+                            rs.getObject(resultColumns.get(property.getExpression())));
                 }
                 R rc = entityBuilder.build();
                 if (rs.next())
@@ -192,10 +136,9 @@ public class DataAccessorImpl implements DataAccessor
          * @param id
          * @return
          */
-        private List<Object> parseId(Object id)
-        {
+        private List<Object> parseId(Object... id) {
             // TODO Multi-column ids
-            return Collections.singletonList(id);
+            return Arrays.asList(id);
         }
     }
 }

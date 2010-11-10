@@ -18,15 +18,28 @@
  */
 package org.esorm;
 
+import org.esorm.entity.db.ValueExpression;
+
+import java.util.List;
+import java.util.Map;
+
 /**
  * @author Vitalii Tymchyshyn
  */
-public interface DataAccessor {
+public interface ParsedQuery {
+    public enum Type {
+        Fetch, Update, Execute
+    }
 
-    /**
-     * @param query
-     * @param params @return
-     */
-    <T> T get(QueryRunner queryRunner, ParsedQuery query, Object... params);
+    Type getType();
 
+    EntityConfiguration getResultConfiguration();
+
+    String getSQL();
+
+    Map<ValueExpression, Integer> getResultMapping();
+
+    Map<String, Integer> getParameterIndexes();
+
+    List<ParameterTransformer> getParameterTransformers();
 }

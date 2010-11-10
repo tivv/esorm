@@ -21,12 +21,6 @@ package org.esorm;
 /**
  * @author Vitalii Tymchyshyn
  */
-public interface DataAccessor {
-
-    /**
-     * @param query
-     * @param params @return
-     */
-    <T> T get(QueryRunner queryRunner, ParsedQuery query, Object... params);
-
+public interface ParameterTransformer {
+    Object transform(Object parameter);
 }
