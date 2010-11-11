@@ -16,20 +16,17 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with EsORM.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.esorm;
+package org.esorm.ann;
 
-import org.esorm.ann.FirstIsDefault;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
  * @author Vitalii Tymchyshyn
  */
-public interface ComplexProperty {
-    @FirstIsDefault
-    public enum FetchType {
-        Select, Join, None
-    }
-
-    boolean isCollection();
-
-    EntityConfiguration getConfiguration();
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.TYPE)
+public @interface FirstIsDefault {
 }

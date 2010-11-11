@@ -20,6 +20,7 @@ package org.esorm.impl;
 
 import org.esorm.*;
 import org.esorm.ann.Default;
+import org.esorm.ann.FirstIsDefault;
 
 import java.io.IOException;
 import java.net.URL;
@@ -120,7 +121,8 @@ public class DefaultQueryConf
 
     public <T extends Enum> T getSelected(Class<T> clazz) {
         Default d = clazz.getAnnotation(Default.class);
-        return d == null ? null : Enum.valueOf(clazz, d.value());
+        return d != null ? Enum.valueOf(clazz, d.value()) :
+                clazz.getAnnotation(FirstIsDefault.class) != null ? clazz.getEnumConstants()[0] : null;
     }
 
     public <T> T get(Enum key) {
