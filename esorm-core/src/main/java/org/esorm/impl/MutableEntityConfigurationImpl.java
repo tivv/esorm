@@ -1,5 +1,5 @@
 /**
- * 
+ *
  * Copyright 2010 Vitalii Tymchyshyn
  * This file is part of EsORM.
  *
@@ -18,92 +18,94 @@
  */
 package org.esorm.impl;
 
-import java.util.*;
-import java.util.Map.Entry;
-
-import org.esorm.*;
+import org.esorm.ComplexProperty;
+import org.esorm.EntityConfiguration;
+import org.esorm.EntityManager;
+import org.esorm.MutableEntityConfiguration;
 import org.esorm.entity.EntityProperty;
 import org.esorm.entity.db.Column;
 import org.esorm.entity.db.SelectExpression;
 import org.esorm.utils.IterableUtils;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+
 /**
  * @author Vitalii Tymchyshyn
- *
  */
-public class MutableEntityConfigurationImpl implements MutableEntityConfiguration
-{
+public class MutableEntityConfigurationImpl implements MutableEntityConfiguration {
     private final String name;
     private EntityManager manager;
     private String location;
     private List<EntityProperty> properties;
     private Map<SelectExpression, List<Column>> idColumns;
-    
+    private Map<String, ComplexProperty> complexProperties;
+
     public MutableEntityConfigurationImpl(String name) {
         this.name = name;
         this.idColumns = new HashMap<SelectExpression, List<Column>>();
         this.properties = new ArrayList<EntityProperty>();
+        this.complexProperties = new HashMap<String, ComplexProperty>();
     }
 
-    public MutableEntityConfigurationImpl(String name, EntityConfiguration parent)
-    {
+    public MutableEntityConfigurationImpl(String name, EntityConfiguration parent) {
         this.name = name;
         this.manager = parent.getManager();
         this.location = parent.getLocation();
         properties = IterableUtils.toList(parent.getProperties());
+        complexProperties = new HashMap<String, ComplexProperty>(parent.getComplexProperties());
         idColumns = new HashMap<SelectExpression, List<Column>>();
         for (Entry<SelectExpression, ? extends Iterable<Column>> e : parent.getIdColumns().entrySet()) {
             idColumns.put(e.getKey(), IterableUtils.toList(e.getValue()));
         }
-        
+
     }
-    
-    public EntityManager getManager()
-    {
+
+    public EntityManager getManager() {
         return manager;
     }
 
-    public void setManager(EntityManager manager)
-    {
+    public void setManager(EntityManager manager) {
         this.manager = manager;
     }
 
-    public String getName()
-    {
+    public String getName() {
         return name;
     }
 
-    public String getLocation()
-    {
+    public String getLocation() {
         return location;
     }
 
-    public void setLocation(String location)
-    {
+    public void setLocation(String location) {
         this.location = location;
     }
 
 
-    public List<EntityProperty> getProperties()
-    {
+    public List<EntityProperty> getProperties() {
         return properties;
     }
 
-    public void setProperties(List<EntityProperty> properties)
-    {
+    public void setProperties(List<EntityProperty> properties) {
         this.properties = properties;
     }
 
     /* (non-Javadoc)
      * @see org.esorm.EntityConfiguration#getPrimaryKeys()
      */
-    public Map<SelectExpression, List<Column>> getIdColumns()
-    {
+
+    public Map<SelectExpression, List<Column>> getIdColumns() {
         return idColumns;
     }
-    
-    protected void setIdColumns(Map<SelectExpression, List<Column>> idColumns)
-    {
+
+    public Map<String, ComplexProperty> getComplexProperties() {
+        return complexProperties;
+    }
+
+    protected void setIdColumns(Map<SelectExpression, List<Column>> idColumns) {
         this.idColumns = idColumns;
     }
 
@@ -113,8 +115,7 @@ public class MutableEntityConfigurationImpl implements MutableEntityConfiguratio
         return addIdColumn(column);
     }
 
-    public MutableEntityConfiguration addIdColumn(Column column)
-    {
+    public MutableEntityConfiguration addIdColumn(Column column) {
         final SelectExpression table = column.getTable();
         List<Column> expressionList = idColumns.get(table);
         if (expressionList == null) {

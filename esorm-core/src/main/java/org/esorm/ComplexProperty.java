@@ -18,25 +18,18 @@
  */
 package org.esorm;
 
-import org.esorm.entity.EntityProperty;
-import org.esorm.entity.db.Column;
-import org.esorm.entity.db.SelectExpression;
-
-import java.util.Map;
+import org.esorm.ann.Default;
 
 /**
  * @author Vitalii Tymchyshyn
  */
-public interface EntityConfiguration {
-    EntityManager getManager();
+public interface ComplexProperty {
+    @Default("Select")
+    public enum FetchType {
+        Select, Join, None
+    }
 
-    String getName();
+    boolean isCollection();
 
-    String getLocation();
-
-    Iterable<EntityProperty> getProperties();
-
-    Map<SelectExpression, ? extends Iterable<Column>> getIdColumns();
-
-    Map<String, ComplexProperty> getComplexProperties();
+    EntityConfiguration getConfiguration();
 }

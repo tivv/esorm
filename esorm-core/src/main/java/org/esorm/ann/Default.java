@@ -16,27 +16,18 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with EsORM.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.esorm;
+package org.esorm.ann;
 
-import org.esorm.entity.EntityProperty;
-import org.esorm.entity.db.Column;
-import org.esorm.entity.db.SelectExpression;
-
-import java.util.Map;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
  * @author Vitalii Tymchyshyn
  */
-public interface EntityConfiguration {
-    EntityManager getManager();
-
-    String getName();
-
-    String getLocation();
-
-    Iterable<EntityProperty> getProperties();
-
-    Map<SelectExpression, ? extends Iterable<Column>> getIdColumns();
-
-    Map<String, ComplexProperty> getComplexProperties();
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.TYPE)
+public @interface Default {
+    String value();
 }

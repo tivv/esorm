@@ -1,5 +1,5 @@
 /**
- * 
+ *
  * Copyright 2010 Vitalii Tymchyshyn
  * This file is part of EsORM.
  *
@@ -22,32 +22,41 @@ import java.util.List;
 
 /**
  * @author Vitalii Tymchyshyn
- *
  */
-public interface QueryRunner
-{
+public interface QueryRunner {
     public ErrorHandler getErrorHandler();
+
     public ConnectionProvider getConnectionProvider();
+
     public DataAccessor getDataAccessor();
+
     /**
      * @return
      */
     public List<String> getEntityConfigurationLocations();
+
     public Iterable<String> getEntityConfigurationLocationsIterable();
+
     /**
      * @return
      */
     public List<String> getEntityImplementationLocations();
+
     public Iterable<String> getEntityImplementationLocationsIterable();
 
     public MutableEntityConfiguration getMutableEntityConfiguration(String name);
 
     public Iterable<EntitiesConfigurator> getEntitiesConfiguratorsIterable();
+
     /**
      * @return
      */
     public Iterable<EntitiesManager> getEntitiesManagersIterable();
-    
+
     public QueryConf customize();
+
+    <T extends Enum> T getSelected(Class<T> clazz);
+
+    <T> T get(Enum key);
 }
 

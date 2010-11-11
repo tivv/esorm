@@ -46,6 +46,8 @@ public class QueryConf implements QueryRunner {
     private Iterable<String> entityImplementationLocationsIterable;
     private Map<String, EntityConfiguration> resolvedConfigurations;
     private Map<String, MutableEntityConfiguration> mutableConfigurations;
+    private Map<Class<Enum>, Enum> lastSettings;
+    private Map<Enum, Object> settings;
     //TODO add cache for often queries building.
 
     public QueryConf() {
@@ -327,6 +329,30 @@ public class QueryConf implements QueryRunner {
 
     public QueryConf customize() {
         return new QueryConf(this);
+    }
+
+    public QueryConf set(Enum key) {
+        return set(key, true);
+    }
+
+    public QueryConf set(Enum key, Object value) {
+        if (lastSettings == null) {
+            lastSettings = new HashMap<Class<Enum>, Enum>();
+            settings = new HashMap<Enum, Object>();
+        }
+        lastSettings.put(key.getDeclaringClass(), key);
+        settings.put(key, value);
+        return this;
+    }
+
+    public <T extends Enum> T getSelected(Class<T> clazz) {
+        T rc = lastSettings == null ? null : (T) lastSettings.get(clazz);
+        return rc == null ? parent.getSelected(clazz) : rc;
+    }
+
+    public <T> T get(Enum key) {
+        T rc = settings == null ? null : (T) settings.get(key);
+        return rc == null ? parent.<T>get(key) : rc;
     }
 
 
