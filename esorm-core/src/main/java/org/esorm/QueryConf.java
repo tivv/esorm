@@ -186,11 +186,11 @@ public class QueryConf implements QueryRunner {
     }
 
     public <T> T get(Class<?> configurationClass, Object id) {
-        return get(getConfiguration(configurationClass), id);
+        return this.<T>get(getConfiguration(configurationClass), id);
     }
 
     public <T> T get(EntityConfiguration configuration, Object id) {
-        return getDataAccessor().get(this, Queries.byId(configuration), id);
+        return getDataAccessor().<T>get(this, Queries.byId(configuration), id);
     }
 
     public <T> void delete(T value) {
@@ -345,7 +345,7 @@ public class QueryConf implements QueryRunner {
         return this;
     }
 
-    public <T extends Enum> T getSelected(Class<T> clazz) {
+    public <T extends Enum<T>> T getSelected(Class<T> clazz) {
         T rc = lastSettings == null ? null : (T) lastSettings.get(clazz);
         return rc == null ? parent.getSelected(clazz) : rc;
     }

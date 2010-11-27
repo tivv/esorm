@@ -119,9 +119,9 @@ public class DefaultQueryConf
         return new QueryConf(this);
     }
 
-    public <T extends Enum> T getSelected(Class<T> clazz) {
+    public <T extends Enum<T>> T getSelected(Class<T> clazz) {
         Default d = clazz.getAnnotation(Default.class);
-        return d != null ? Enum.valueOf(clazz, d.value()) :
+        return d != null ? Enum.<T>valueOf(clazz, d.value()) :
                 clazz.getAnnotation(FirstIsDefault.class) != null ? clazz.getEnumConstants()[0] : null;
     }
 

@@ -55,7 +55,7 @@ public interface QueryRunner {
 
     public QueryConf customize();
 
-    <T extends Enum> T getSelected(Class<T> clazz);
+    <T extends Enum<T>> T getSelected(Class<T> clazz);
 
     <T> T get(Enum key);
 }
