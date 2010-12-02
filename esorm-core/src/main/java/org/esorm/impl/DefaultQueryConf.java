@@ -129,6 +129,18 @@ public class DefaultQueryConf
         return null;
     }
 
+    public EntityConfiguration getConfiguration(String name, String configurationLocation, String managerLocation) {
+        throw new IllegalStateException();
+    }
+
+    public EntityConfiguration getConfiguration(String name) {
+        throw new IllegalStateException();
+    }
+
+    public EntityConfiguration getConfiguration(Class<?> configurationClass) {
+        throw new IllegalStateException();
+    }
+
     @SuppressWarnings("unchecked")
     private static <T> List<T> loadServices(Class<T> clazz) {
         final Map<T, Double> services = new IdentityHashMap<T, Double>();

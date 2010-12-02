@@ -16,22 +16,33 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with EsORM.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.esorm;
+package org.esorm.impl;
 
-import org.esorm.ann.FirstIsDefault;
+import org.esorm.ComplexProperty;
+import org.esorm.EntityConfiguration;
+import org.esorm.QueryRunner;
 
 /**
  * @author Vitalii Tymchyshyn
  */
-public interface ComplexProperty {
-    @FirstIsDefault
-    public enum FetchType {
-        Select, Join, None
+public class PlainComplexPropertyImpl implements ComplexProperty {
+    private final Class<?> propertyClass;
+    private final FetchType fetchType;
+
+    public PlainComplexPropertyImpl(Class<?> propertyClass, FetchType fetchType) {
+        this.propertyClass = propertyClass;
+        this.fetchType = fetchType;
     }
 
-    boolean isCollection();
+    public boolean isCollection() {
+        return false;
+    }
 
-    EntityConfiguration getConfiguration(QueryRunner runner);
+    public EntityConfiguration getConfiguration(QueryRunner runner) {
+        return runner.getConfiguration(propertyClass);
+    }
 
-    FetchType getFetchType();
+    public FetchType getFetchType() {
+        return fetchType;
+    }
 }

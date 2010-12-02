@@ -58,5 +58,11 @@ public interface QueryRunner {
     <T extends Enum<T>> T getSelected(Class<T> clazz);
 
     <T> T get(Enum key);
+
+    EntityConfiguration getConfiguration(String name, String configurationLocation, String managerLocation);
+
+    EntityConfiguration getConfiguration(String name);
+
+    EntityConfiguration getConfiguration(Class<?> configurationClass);
 }
 

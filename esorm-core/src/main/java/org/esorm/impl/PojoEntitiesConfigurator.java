@@ -66,12 +66,15 @@ public class PojoEntitiesConfigurator
         LazyManagedEntityConfigurationImpl rc = new LazyManagedEntityConfigurationImpl(name);
         Table table = new TableImpl(name);
         for (Property property : new PropertySelectorImpl(entityClass).select()) {
-            if ((property.getter() != null) && (property.getter().getDeclaringClass() == Object.class))
-                continue;
-            final EntityPropertyImpl entityProperty = new EntityPropertyImpl(property.name(), new ColumnImpl(table, property.name()));
-            rc.getProperties().add(entityProperty);
-            if (idPropertyName.equals(property.name())) {
-                rc.addIdProperty(entityProperty);
+            if (PojoUtils.isSimpleClass(property.itemType())) {
+                final EntityPropertyImpl entityProperty = new EntityPropertyImpl(property.name(), new ColumnImpl(table, property.name()));
+                rc.getProperties().add(entityProperty);
+                if (idPropertyName.equals(property.name())) {
+                    rc.addIdProperty(entityProperty);
+                }
+            } else {
+                PlainComplexPropertyImpl plainComplexProperty = new PlainComplexPropertyImpl(property.itemType(), null);
+                rc.getComplexProperties().put(property.name(), plainComplexProperty);
             }
         }
         return rc;

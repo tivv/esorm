@@ -1,5 +1,5 @@
 /**
- * 
+ *
  * Copyright 2010 Vitalii Tymchyshyn
  * This file is part of EsORM.
  *
@@ -18,46 +18,45 @@
  */
 package org.esorm.jpa;
 
-import java.lang.reflect.Modifier;
-import java.util.*;
-
-import javax.persistence.*;
-
+import org.esorm.ComplexProperty;
 import org.esorm.EntitiesConfigurator;
 import org.esorm.LazyManagedEntityConfiguration;
-import org.esorm.entity.EntityProperty;
 import org.esorm.entity.db.Column;
 import org.esorm.entity.db.Table;
-import org.esorm.impl.*;
+import org.esorm.impl.EntityPropertyImpl;
+import org.esorm.impl.LazyManagedEntityConfigurationImpl;
+import org.esorm.impl.PlainComplexPropertyImpl;
 import org.esorm.impl.db.ColumnImpl;
 import org.esorm.impl.db.TableImpl;
-import org.esorm.utils.*;
+import org.esorm.utils.PojoUtils;
 import org.esorm.utils.PojoUtils.NameFilter;
 import org.jcloudlet.bean.Property;
 import org.jcloudlet.bean.impl.PropertySelectorImpl;
 
-import static org.esorm.utils.StringUtils.*;
+import javax.persistence.*;
+import java.lang.reflect.Modifier;
+import java.util.*;
+
+import static org.esorm.utils.StringUtils.notEmpty;
+
 /**
  * @author Vitalii Tymchyshyn
- *
  */
 public class JpaEntitiesConfigurator
-implements EntitiesConfigurator
-{
+        implements EntitiesConfigurator {
     /**
      */
     public LazyManagedEntityConfiguration resolveConfiguration(String name,
-                                                               Iterable<String> configurationLocations)
-    {
+                                                               Iterable<String> configurationLocations) {
         return resolveConfiguration(name, configurationLocations, false);
     }
 
     /* (non-Javadoc)
      * @see org.esorm.EntitiesConfigurator#resolveConfiguration(java.lang.String, java.lang.Iterable)
      */
+
     public LazyManagedEntityConfiguration resolveConfiguration(String name,
-                                                               Iterable<String> configurationLocations, boolean locationOverride)
-    {
+                                                               Iterable<String> configurationLocations, boolean locationOverride) {
         Class<?> entityClass = PojoUtils.resolveClass(name, configurationLocations, locationOverride, NAME_FILTER);
         if (entityClass == null)
             return null;
@@ -65,53 +64,57 @@ implements EntitiesConfigurator
         rc.setLocation(entityClass.getName());
         Table primaryTable = getPrimaryTable(entityClass);
         String primaryTableName = primaryTable.getName();
-        Map<String, List<PropertyBuilder>> properties = new HashMap<String, List<PropertyBuilder>>();
-        Map<String, PropertyBuilder> idProperties = fillProperties(entityClass,
-            primaryTable, properties);
-        
-        for (PropertyBuilder idProperty: idProperties.values()) {
+        Map<String, List<SimplePropertyBuilder>> simpleProperties = new HashMap<String, List<SimplePropertyBuilder>>();
+        Map<String, SimplePropertyBuilder> idProperties = fillProperties(entityClass,
+                primaryTable, simpleProperties, rc.getComplexProperties());
+
+        for (SimplePropertyBuilder idProperty : idProperties.values()) {
             rc.addIdColumn(idProperty.getColumn());
         }
         Map<String, Table> tables = new HashMap<String, Table>();
         tables.put(primaryTableName, primaryTable);
         addSecondaryTable(entityClass, tables, idProperties);
         addSecondaryTables(entityClass, tables, idProperties);
-        for (List<PropertyBuilder> e: properties.values()) {
-            for (PropertyBuilder property: e) {
+        for (List<SimplePropertyBuilder> e : simpleProperties.values()) {
+            for (SimplePropertyBuilder property : e) {
                 rc.getProperties().add(property.getEntityProperty());
             }
         }
         return rc;
     }
 
-    private Map<String, PropertyBuilder> fillProperties(Class<?> entityClass,
-                                          Table primaryTable,
-                                          Map<String, List<PropertyBuilder>> properties)
-    {
-        PropertyBuilder defaultIdProperty = null;
-        Map<String, PropertyBuilder> idProperties = null;
-        for (Property property: new PropertySelectorImpl(entityClass).ignore(Transient.class).select()) {
+    private Map<String, SimplePropertyBuilder> fillProperties(Class<?> entityClass,
+                                                              Table primaryTable,
+                                                              Map<String, List<SimplePropertyBuilder>> simpleProperties,
+                                                              Map<String, ComplexProperty> complexProperties) {
+        SimplePropertyBuilder defaultIdProperty = null;
+        Map<String, SimplePropertyBuilder> idProperties = null;
+        for (Property property : new PropertySelectorImpl(entityClass).ignore(Transient.class).select()) {
             if (property.field() != null && Modifier.isTransient(property.field().getModifiers()))
                 continue;
-            PropertyBuilder propertyBuilder = new PropertyBuilder(property, primaryTable);
-            String propertyTable = propertyBuilder.getTableName();
-            List<PropertyBuilder> tableProperties = properties.get(propertyTable);
-            if (tableProperties == null) {
-                tableProperties = new ArrayList<PropertyBuilder>();
-                properties.put(propertyTable, tableProperties);
-            }
-            tableProperties.add(propertyBuilder);
-            Id id = property.annotation(Id.class);
-            if (id != null) {
-                if (!primaryTable.getName().equals(propertyTable))
-                    throw new IllegalStateException("@Id annotation on " + entityClass + " property " + property.name() 
-                        + " assigned to table " + propertyTable + " different from primary table " + primaryTable.getName());
-                if (idProperties == null) {
-                    idProperties = new LinkedHashMap<String, PropertyBuilder>();
+            if (PojoUtils.isSimpleClass(property.type())) {
+                SimplePropertyBuilder simplePropertyBuilder = new SimplePropertyBuilder(property, primaryTable);
+                String propertyTable = simplePropertyBuilder.getTableName();
+                List<SimplePropertyBuilder> tableProperties = simpleProperties.get(propertyTable);
+                if (tableProperties == null) {
+                    tableProperties = new ArrayList<SimplePropertyBuilder>();
+                    simpleProperties.put(propertyTable, tableProperties);
                 }
-                idProperties.put(propertyBuilder.getColumn().getName(), propertyBuilder);
-            } else if (idProperties == null && "id".equals(property.name()) && primaryTable.getName().equals(propertyTable)) {
-                defaultIdProperty = propertyBuilder;
+                tableProperties.add(simplePropertyBuilder);
+                Id id = property.annotation(Id.class);
+                if (id != null) {
+                    if (!primaryTable.getName().equals(propertyTable))
+                        throw new IllegalStateException("@Id annotation on " + entityClass + " property " + property.name()
+                                + " assigned to table " + propertyTable + " different from primary table " + primaryTable.getName());
+                    if (idProperties == null) {
+                        idProperties = new LinkedHashMap<String, SimplePropertyBuilder>();
+                    }
+                    idProperties.put(simplePropertyBuilder.getColumn().getName(), simplePropertyBuilder);
+                } else if (idProperties == null && "id".equals(property.name()) && primaryTable.getName().equals(propertyTable)) {
+                    defaultIdProperty = simplePropertyBuilder;
+                }
+            } else {
+                complexProperties.put(property.name(), new PlainComplexPropertyImpl(property.type(), null));
             }
         }
         if (idProperties == null && defaultIdProperty != null)
@@ -119,8 +122,7 @@ implements EntitiesConfigurator
         return idProperties;
     }
 
-    private void addSecondaryTables(Class<?> entityClass, Map<String, Table> rc, Map<String, PropertyBuilder> idProperties)
-    {
+    private void addSecondaryTables(Class<?> entityClass, Map<String, Table> rc, Map<String, SimplePropertyBuilder> idProperties) {
         SecondaryTables secondaryTables = entityClass.getAnnotation(SecondaryTables.class);
         if (secondaryTables != null) {
             for (SecondaryTable secondaryTable : secondaryTables.value()) {
@@ -129,41 +131,36 @@ implements EntitiesConfigurator
         }
     }
 
-    private void addSecondaryTable(Class<?> entityClass, Map<String, Table> rc, Map<String, PropertyBuilder> idProperties)
-    {
+    private void addSecondaryTable(Class<?> entityClass, Map<String, Table> rc, Map<String, SimplePropertyBuilder> idProperties) {
         SecondaryTable secondaryTable = entityClass.getAnnotation(SecondaryTable.class);
         if (secondaryTable != null) {
             addSecondaryTable(rc, secondaryTable, idProperties);
         }
     }
 
-    private Table getPrimaryTable(Class<?> entityClass)
-    {
-        javax.persistence.Table primaryTable = 
-            entityClass.getAnnotation(javax.persistence.Table.class);
+    private Table getPrimaryTable(Class<?> entityClass) {
+        javax.persistence.Table primaryTable =
+                entityClass.getAnnotation(javax.persistence.Table.class);
         if (primaryTable != null) {
             final String tableName = notEmpty(primaryTable.name(), entityClass.getSimpleName());
             return new TableImpl(
-                notEmpty(primaryTable.catalog()), notEmpty(primaryTable.schema()), tableName);
+                    notEmpty(primaryTable.catalog()), notEmpty(primaryTable.schema()), tableName);
         } else {
             return new TableImpl(entityClass.getSimpleName());
         }
     }
 
     private void addSecondaryTable(Map<String, Table> rc,
-                                   SecondaryTable secondaryTable, Map<String, PropertyBuilder> primaryIdColumns)
-    {
+                                   SecondaryTable secondaryTable, Map<String, SimplePropertyBuilder> primaryIdColumns) {
         final TableImpl table = new TableImpl(
-            notEmpty(secondaryTable.catalog()), notEmpty(secondaryTable.schema()), secondaryTable.name());
+                notEmpty(secondaryTable.catalog()), notEmpty(secondaryTable.schema()), secondaryTable.name());
         rc.put(secondaryTable.name(), table);
     }
 
-    private static NameFilter NAME_FILTER = new NameFilter()
-    {
-        
+    private static NameFilter NAME_FILTER = new NameFilter() {
+
         public boolean accept(Class<?> clazz, String name,
-                              boolean locationOverride)
-        {
+                              boolean locationOverride) {
             final Entity entityAnn = clazz.getAnnotation(Entity.class);
             if (entityAnn == null)
                 return false;
@@ -172,16 +169,16 @@ implements EntitiesConfigurator
             return notEmpty(entityAnn.name(), clazz.getSimpleName()).equals(name);
         }
     };
-    
-    private static class PropertyBuilder {
+
+    private static class SimplePropertyBuilder {
         private final Property property;
         private final String tableName;
         private final javax.persistence.Column columnAnn;
         private Table table;
         private ColumnImpl column;
         private EntityPropertyImpl entityProperty;
-        
-        private PropertyBuilder(Property property, Table primaryTable) {
+
+        private SimplePropertyBuilder(Property property, Table primaryTable) {
             this.property = property;
             this.columnAnn = property.annotation(javax.persistence.Column.class);
             if (columnAnn != null) {
@@ -192,36 +189,31 @@ implements EntitiesConfigurator
                 tableName = primaryTable.getName();
                 setTable(primaryTable);
             }
-            
+
         }
 
-        public Property getProperty()
-        {
+        public Property getProperty() {
             return property;
         }
 
-        public String getTableName()
-        {
+        public String getTableName() {
             return tableName;
         }
 
-        public javax.persistence.Column getColumnAnn()
-        {
+        public javax.persistence.Column getColumnAnn() {
             return columnAnn;
         }
 
-        public Table getTable()
-        {
+        public Table getTable() {
             return table;
         }
 
-        public void setTable(Table table)
-        {
+        public void setTable(Table table) {
             assert this.table == null;
             this.table = table;
             column = new ColumnImpl(table, property.name());
             if (columnAnn != null) {
-                if (columnAnn.name().length()>0)
+                if (columnAnn.name().length() > 0)
                     column.setName(columnAnn.name());
                 column.setInsertable(columnAnn.insertable());
                 column.setUpdateable(columnAnn.updatable());
@@ -229,14 +221,12 @@ implements EntitiesConfigurator
             entityProperty = new EntityPropertyImpl(property.name(), column);
         }
 
-        public Column getColumn()
-        {
+        public Column getColumn() {
             assert column != null;
             return column;
         }
 
-        public EntityPropertyImpl getEntityProperty()
-        {
+        public EntityPropertyImpl getEntityProperty() {
             assert entityProperty != null;
             return entityProperty;
         }
