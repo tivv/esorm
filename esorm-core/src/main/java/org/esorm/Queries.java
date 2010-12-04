@@ -112,6 +112,10 @@ public class Queries {
             public List<ParameterTransformer> getParameterTransformers() {
                 return Collections.emptyList();
             }
+
+            public List<ParsedQuery> getChainedQueries() {
+                return Collections.emptyList();
+            }
         };
     }
 }

@@ -42,4 +42,6 @@ public interface ParsedQuery {
     Map<String, Integer> getParameterIndexes();
 
     List<ParameterTransformer> getParameterTransformers();
+
+    List<ParsedQuery> getChainedQueries();
 }
