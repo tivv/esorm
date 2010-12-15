@@ -105,6 +105,10 @@ public class Queries {
                 return resultColumns;
             }
 
+            public Map<SelectExpression, List<ValueExpression>> getResultGrouping() {
+                return Collections.emptyMap();
+            }
+
             public Map<String, Integer> getParameterIndexes() {
                 return null;
             }

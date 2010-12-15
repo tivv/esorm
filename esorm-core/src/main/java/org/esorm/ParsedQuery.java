@@ -18,6 +18,7 @@
  */
 package org.esorm;
 
+import org.esorm.entity.db.SelectExpression;
 import org.esorm.entity.db.ValueExpression;
 
 import java.util.List;
@@ -38,6 +39,8 @@ public interface ParsedQuery {
     String getSQL();
 
     Map<ValueExpression, Integer> getResultMapping();
+
+    Map<SelectExpression, List<ValueExpression>> getResultGrouping();
 
     Map<String, Integer> getParameterIndexes();
 
