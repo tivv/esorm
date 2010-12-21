@@ -18,23 +18,10 @@
  */
 package org.esorm;
 
-import java.sql.Connection;
-import java.util.Map;
+import java.util.Iterator;
 
 /**
  * @author Vitalii Tymchyshyn
  */
-public interface ParsedQuery {
-    public enum Type {
-        Fetch, Update, Execute
-    }
-
-    PreparedQuery prepare(Connection con, Object... params);
-
-    PreparedQuery prepare(Connection con, Map<String, Object> params);
-
-    Type getType();
-
-    EntityConfiguration getResultConfiguration();
-
-}            
+public interface QueryIterator extends Iterator {
+}

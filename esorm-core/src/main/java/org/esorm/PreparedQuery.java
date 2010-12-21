@@ -18,23 +18,27 @@
  */
 package org.esorm;
 
-import java.sql.Connection;
+import org.esorm.entity.db.SelectExpression;
+import org.esorm.entity.db.ValueExpression;
+
+import java.util.List;
 import java.util.Map;
 
 /**
  * @author Vitalii Tymchyshyn
  */
-public interface ParsedQuery {
-    public enum Type {
-        Fetch, Update, Execute
-    }
+public interface PreparedQuery extends Iterable {
+    Map<ValueExpression, Integer> getResultMapping();
 
-    PreparedQuery prepare(Connection con, Object... params);
+    /**
+     * @return map from each level (defined by table) to list or columns that group multiple result set records into
+     *         one resulting entity
+     */
+    Map<SelectExpression, List<ValueExpression>> getResultGrouping();
 
-    PreparedQuery prepare(Connection con, Map<String, Object> params);
-
-    Type getType();
+    List<PreparedQuery> getChainedQueries();
 
     EntityConfiguration getResultConfiguration();
 
-}            
+    QueryIterator iterator();
+}
