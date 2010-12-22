@@ -22,8 +22,11 @@ import org.esorm.entity.EntityProperty;
 import org.esorm.entity.db.Column;
 import org.esorm.entity.db.SelectExpression;
 import org.esorm.entity.db.ValueExpression;
+import org.esorm.impl.db.ParsedFetchQuery;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 
 /**
  * @author Vitalii Tymchyshyn
@@ -88,38 +91,7 @@ public class Queries {
             pkColumn.appendQuery(query, tablesInvolved);
             query.append("=?");
         }
-        return new ParsedQuery() {
-            public Type getType() {
-                return Type.Fetch;
-            }
-
-            public EntityConfiguration getResultConfiguration() {
-                return configuration;
-            }
-
-            public String getSQL() {
-                return query.toString();
-            }
-
-            public Map<ValueExpression, Integer> getResultMapping() {
-                return resultColumns;
-            }
-
-            public Map<SelectExpression, List<ValueExpression>> getResultGrouping() {
-                return Collections.emptyMap();
-            }
-
-            public Map<String, Integer> getParameterIndexes() {
-                return null;
-            }
-
-            public List<ParameterTransformer> getParameterTransformers() {
-                return Collections.emptyList();
-            }
-
-            public List<ParsedQuery> getChainedQueries() {
-                return Collections.emptyList();
-            }
-        };
+        return new ParsedFetchQuery(configuration, query.toString(), resultColumns, null);
     }
+
 }
