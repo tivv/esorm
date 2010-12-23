@@ -19,14 +19,14 @@
 package org.esorm.impl.db;
 
 import org.esorm.EntityConfiguration;
-import org.esorm.ParameterTransformer;
 import org.esorm.ParsedQuery;
 import org.esorm.PreparedQuery;
-import org.esorm.entity.db.SelectExpression;
+import org.esorm.RegisteredExceptionWrapper;
 import org.esorm.entity.db.ValueExpression;
 
 import java.sql.Connection;
-import java.util.Collections;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
 
@@ -59,7 +59,15 @@ public class ParsedFetchQuery implements ParsedQuery {
     }
 
     public PreparedQuery prepare(Connection con, Object... params) {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        try {
+            PreparedStatement stmt = con.prepareStatement(query);
+            for (int i = 0; i < params.length; i++) {
+                stmt.setObject(i + 1, params[i]);
+            }
+            return new PreparedFetchQuery(configuration, stmt, resultColumns);
+        } catch (SQLException e) {
+            throw new RegisteredExceptionWrapper(e);
+        }
     }
 
     public PreparedQuery prepare(Connection con, Map<String, Object> params) {
@@ -77,29 +85,5 @@ public class ParsedFetchQuery implements ParsedQuery {
             paramList[i] = val;
         }
         return prepare(con, paramList);
-    }
-
-    public String getSQL() {
-        return query;
-    }
-
-    public Map<ValueExpression, Integer> getResultMapping() {
-        return resultColumns;
-    }
-
-    public Map<SelectExpression, List<ValueExpression>> getResultGrouping() {
-        return Collections.emptyMap();
-    }
-
-    public List<String> getParameterIndexes() {
-        return null;
-    }
-
-    public List<ParameterTransformer> getParameterTransformers() {
-        return Collections.emptyList();
-    }
-
-    public List<ParsedQuery> getChainedQueries() {
-        return Collections.emptyList();
     }
 }
