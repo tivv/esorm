@@ -20,6 +20,7 @@ package org.esorm;
 
 import org.esorm.entity.db.SelectExpression;
 import org.esorm.entity.db.ValueExpression;
+import org.esorm.utils.Closeable;
 
 import java.util.List;
 import java.util.Map;
@@ -27,7 +28,7 @@ import java.util.Map;
 /**
  * @author Vitalii Tymchyshyn
  */
-public interface PreparedQuery extends Iterable {
+public interface PreparedQuery<R> extends Iterable<R>, Closeable {
     Map<ValueExpression, Integer> getResultMapping();
 
     /**

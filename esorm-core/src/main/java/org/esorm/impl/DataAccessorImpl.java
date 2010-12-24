@@ -19,16 +19,11 @@
 package org.esorm.impl;
 
 import org.esorm.*;
-import org.esorm.entity.EntityProperty;
-import org.esorm.entity.db.ValueExpression;
 
 import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -91,40 +86,29 @@ public class DataAccessorImpl implements DataAccessor {
         public R run(Connection con, QueryRunner queryRunner,
                      ParsedQuery query, Object[] params)
                 throws SQLException {
-            EntityConfiguration configuration = query.getResultConfiguration();
-            PreparedStatement stmt = con.prepareStatement(query.getSQL());
-            ResultSet rs = null;
-            List<Object> parsedId = parseId(params);
             boolean hadError = true;
+            PreparedQuery<R> preparedQuery = null;
+            QueryIterator<R> rs = null;
             try {
-                for (int i = 0; i < parsedId.size(); i++) {
-                    stmt.setObject(i + 1, parsedId.get(i));
-                }
-                rs = stmt.executeQuery();
-                if (!rs.next())
+                preparedQuery = query.prepare(con, parseId(params));
+                rs = preparedQuery.iterator();
+                if (!rs.hasNext())
                     return null;
-                Map<ValueExpression, Integer> resultColumns = query.getResultMapping();
-                EntityBuilder<R> entityBuilder = configuration.getManager().makeBuilder();
-                entityBuilder.prepare();
-                for (EntityProperty property : configuration.getProperties()) {
-                    entityBuilder.setProperty(property.getName(),
-                            rs.getObject(resultColumns.get(property.getExpression())));
-                }
-                R rc = entityBuilder.build();
-                if (rs.next())
+                R rc = rs.next();
+                if (rs.hasNext())
                     throw new IllegalStateException("More than one row returned");
                 hadError = false;
                 return rc;
             } finally {
                 if (!hadError) {
-                    if (rs != null)
-                        rs.close();
-                    stmt.close();
+                    rs.close();
+                    preparedQuery.close();
                 } else {
                     try {
                         if (rs != null)
                             rs.close();
-                        stmt.close();
+                        if (preparedQuery != null)
+                            preparedQuery.close();
                     } catch (Exception e) {
                         LOG.log(Level.WARNING, "Second exception while statement close", e);
                     }

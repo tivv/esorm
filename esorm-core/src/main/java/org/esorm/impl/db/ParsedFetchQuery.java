@@ -58,19 +58,19 @@ public class ParsedFetchQuery implements ParsedQuery {
         return configuration;
     }
 
-    public PreparedQuery prepare(Connection con, Object... params) {
+    public <R> PreparedQuery<R> prepare(Connection con, Object... params) {
         try {
             PreparedStatement stmt = con.prepareStatement(query);
             for (int i = 0; i < params.length; i++) {
                 stmt.setObject(i + 1, params[i]);
             }
-            return new PreparedFetchQuery(configuration, stmt, resultColumns);
+            return new PreparedFetchQuery<R>(configuration, stmt, resultColumns);
         } catch (SQLException e) {
             throw new RegisteredExceptionWrapper(e);
         }
     }
 
-    public PreparedQuery prepare(Connection con, Map<String, Object> params) {
+    public <R> PreparedQuery<R> prepare(Connection con, Map<String, Object> params) {
         if (params == null || params.isEmpty())
             return prepare(con);
         if (parameterIndexes == null)

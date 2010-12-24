@@ -16,25 +16,11 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with EsORM.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.esorm;
-
-import java.sql.Connection;
-import java.util.Map;
+package org.esorm.utils;
 
 /**
  * @author Vitalii Tymchyshyn
  */
-public interface ParsedQuery {
-    public enum Type {
-        Fetch, Update, Execute
-    }
-
-    <R> PreparedQuery<R> prepare(Connection con, Object... params);
-
-    <R> PreparedQuery<R> prepare(Connection con, Map<String, Object> params);
-
-    Type getType();
-
-    EntityConfiguration getResultConfiguration();
-
-}            
+public interface Closeable extends java.io.Closeable {
+    void close();
+}

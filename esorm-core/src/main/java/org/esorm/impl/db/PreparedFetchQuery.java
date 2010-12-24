@@ -34,7 +34,7 @@ import java.util.Map;
 /**
  * @author Vitalii Tymchyshyn
  */
-public class PreparedFetchQuery implements PreparedQuery {
+public class PreparedFetchQuery<R> implements PreparedQuery<R> {
     private final Map<ValueExpression, Integer> resultColumns;
     private final EntityConfiguration configuration;
     private final PreparedStatement statement;
@@ -61,9 +61,17 @@ public class PreparedFetchQuery implements PreparedQuery {
         return configuration;
     }
 
-    public QueryIterator iterator() {
+    public QueryIterator<R> iterator() {
         try {
-            return new ResultSetQueryIterator(statement.executeQuery());
+            return new ResultSetQueryIterator<R>(configuration, statement.executeQuery(), resultColumns);
+        } catch (SQLException e) {
+            throw new RegisteredExceptionWrapper(e);
+        }
+    }
+
+    public void close() {
+        try {
+            statement.close();
         } catch (SQLException e) {
             throw new RegisteredExceptionWrapper(e);
         }

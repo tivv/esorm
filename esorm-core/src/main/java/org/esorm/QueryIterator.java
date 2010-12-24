@@ -18,10 +18,12 @@
  */
 package org.esorm;
 
+import org.esorm.utils.Closeable;
+
 import java.util.Iterator;
 
 /**
  * @author Vitalii Tymchyshyn
  */
-public interface QueryIterator extends Iterator {
+public interface QueryIterator<E> extends Iterator<E>, Closeable {
 }
