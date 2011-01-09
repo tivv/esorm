@@ -66,7 +66,7 @@ public class PojoEntitiesConfigurator
         LazyManagedEntityConfigurationImpl rc = new LazyManagedEntityConfigurationImpl(name);
         Table table = new TableImpl(name);
         for (Property property : new PropertySelectorImpl(entityClass).select()) {
-            if (PojoUtils.isSimpleClass(property.itemType())) {
+            if (PojoUtils.isSimpleClass(property.type())) {
                 final EntityPropertyImpl entityProperty = new EntityPropertyImpl(property.name(), new ColumnImpl(table, property.name()));
                 rc.getProperties().add(entityProperty);
                 if (idPropertyName.equals(property.name())) {
