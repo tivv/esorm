@@ -24,6 +24,7 @@ import org.esorm.QueryIterator;
 import org.esorm.RegisteredExceptionWrapper;
 import org.esorm.entity.EntityProperty;
 import org.esorm.entity.db.ValueExpression;
+import org.esorm.impl.QueryCache;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -38,9 +39,11 @@ public class ResultSetQueryIterator<E> implements QueryIterator<E> {
     private final EntityConfiguration configuration;
     private final ResultSet resultSet;
     private final Map<ValueExpression, Integer> resultColumns;
+    private final QueryCache queryCache;
     private boolean closed;
 
-    public ResultSetQueryIterator(EntityConfiguration configuration, ResultSet resultSet, Map<ValueExpression, Integer> resultColumns) {
+    public ResultSetQueryIterator(QueryCache queryCache, EntityConfiguration configuration, ResultSet resultSet, Map<ValueExpression, Integer> resultColumns) {
+        this.queryCache = queryCache;
         this.configuration = configuration;
         this.resultSet = resultSet;
         this.resultColumns = resultColumns;
@@ -102,5 +105,9 @@ public class ResultSetQueryIterator<E> implements QueryIterator<E> {
         } catch (SQLException e) {
             throw new RegisteredExceptionWrapper(e);
         }
+    }
+
+    public void clearEntityCache() {
+        queryCache.clear();
     }
 }

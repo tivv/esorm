@@ -21,14 +21,10 @@ package org.esorm.impl.db;
 import org.esorm.EntityConfiguration;
 import org.esorm.ParsedQuery;
 import org.esorm.PreparedQuery;
-import org.esorm.RegisteredExceptionWrapper;
 import org.esorm.entity.db.ValueExpression;
-import org.esorm.impl.parameters.PreparedStatementParameterSetter;
 import org.esorm.parameters.ParameterMapper;
 
 import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
 
@@ -62,30 +58,15 @@ public class ParsedFetchQuery implements ParsedQuery {
         return configuration;
     }
 
+    public <R> PreparedQuery<R> prepare(Connection con) {
+        return new PreparedFetchQuery<R>(con, queryCache, configuration, query, parameterMapper, resultColumns, parameterIndexes);
+    }
+
     public <R> PreparedQuery<R> prepare(Connection con, Object... params) {
-        try {
-            PreparedStatement stmt = con.prepareStatement(query);
-            parameterMapper.process(new PreparedStatementParameterSetter(stmt), params);
-            return new PreparedFetchQuery<R>(configuration, stmt, resultColumns);
-        } catch (SQLException e) {
-            throw new RegisteredExceptionWrapper(e);
-        }
+        return this.<R>prepare(con).reset(params);
     }
 
     public <R> PreparedQuery<R> prepare(Connection con, Map<String, Object> params) {
-        if (params == null || params.isEmpty())
-            return prepare(con);
-        if (parameterIndexes == null)
-            throw new IllegalStateException("Query does not have named parameters");
-        Object[] paramList = new Object[parameterIndexes.size()];
-        for (int i = 0; i < paramList.length; i++) {
-            String paramName = parameterIndexes.get(i);
-            Object val = params.get(paramName);
-            if (val == null && !params.containsKey(paramName))
-                throw new IllegalArgumentException("Parameter " + paramName + " was expected. Put null to the map if you wish" +
-                        " to set it to null");
-            paramList[i] = val;
-        }
-        return prepare(con, paramList);
+        return this.<R>prepare(con).reset(params);
     }
 }

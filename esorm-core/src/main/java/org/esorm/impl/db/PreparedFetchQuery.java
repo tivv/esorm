@@ -24,7 +24,11 @@ import org.esorm.QueryIterator;
 import org.esorm.RegisteredExceptionWrapper;
 import org.esorm.entity.db.SelectExpression;
 import org.esorm.entity.db.ValueExpression;
+import org.esorm.impl.QueryCache;
+import org.esorm.impl.parameters.PreparedStatementParameterSetter;
+import org.esorm.parameters.ParameterMapper;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.Collections;
@@ -35,14 +39,23 @@ import java.util.Map;
  * @author Vitalii Tymchyshyn
  */
 public class PreparedFetchQuery<R> implements PreparedQuery<R> {
+    private final Connection con;
+    private final String query;
+    private final ParameterMapper parameterMapper;
     private final Map<ValueExpression, Integer> resultColumns;
     private final EntityConfiguration configuration;
-    private final PreparedStatement statement;
+    private final List<String> parameterIndexes;
+    private final QueryCache queryCache;
+    private PreparedStatement statement;
 
-    public PreparedFetchQuery(EntityConfiguration configuration, PreparedStatement stmt, Map<ValueExpression, Integer> resultColumns) {
+    public PreparedFetchQuery(Connection con, QueryCache queryCache, EntityConfiguration configuration, String query, ParameterMapper parameterMapper, Map<ValueExpression, Integer> resultColumns, List<String> parameterIndexes) {
+        this.con = con;
+        this.queryCache = queryCache;
+        this.query = query;
+        this.parameterMapper = parameterMapper;
         this.resultColumns = resultColumns;
         this.configuration = configuration;
-        statement = stmt;
+        this.parameterIndexes = parameterIndexes;
     }
 
     public Map<ValueExpression, Integer> getResultMapping() {
@@ -63,11 +76,47 @@ public class PreparedFetchQuery<R> implements PreparedQuery<R> {
 
     public QueryIterator<R> iterator() {
         try {
-            return new ResultSetQueryIterator<R>(configuration, statement.executeQuery(), resultColumns);
+            return new ResultSetQueryIterator<R>(queryCache, configuration, statement.executeQuery(), resultColumns);
         } catch (SQLException e) {
             throw new RegisteredExceptionWrapper(e);
         }
     }
+
+    public QueryIterator<R> iterator(Object... params) {
+        return reset(params).iterator();
+    }
+
+    public QueryIterator<R> iterator(Map<String, Object> params) {
+        return reset(params).iterator();
+    }
+
+    public PreparedFetchQuery<R> reset(Object... params) {
+        if (statement == null) {
+            try {
+                statement = con.prepareStatement(query);
+            } catch (SQLException e) {
+                throw new RegisteredExceptionWrapper(e);
+            }
+        }
+        parameterMapper.process(new PreparedStatementParameterSetter(statement), params);
+        return this;
+    }
+
+    public PreparedFetchQuery<R> reset(Map<String, Object> params) {
+        if (parameterIndexes == null)
+            throw new IllegalStateException("Query does not have named parameters");
+        Object[] paramList = new Object[parameterIndexes.size()];
+        for (int i = 0; i < paramList.length; i++) {
+            String paramName = parameterIndexes.get(i);
+            Object val = params.get(paramName);
+            if (val == null && !params.containsKey(paramName))
+                throw new IllegalArgumentException("Parameter " + paramName + " was expected. Put null to the map if you wish" +
+                        " to set it to null");
+            paramList[i] = val;
+        }
+        return reset(paramList);
+    }
+
 
     public void close() {
         try {

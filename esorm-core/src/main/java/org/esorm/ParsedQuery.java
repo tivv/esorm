@@ -29,6 +29,8 @@ public interface ParsedQuery {
         Fetch, Update, Execute
     }
 
+    <R> PreparedQuery<R> prepare(Connection con);
+
     <R> PreparedQuery<R> prepare(Connection con, Object... params);
 
     <R> PreparedQuery<R> prepare(Connection con, Map<String, Object> params);

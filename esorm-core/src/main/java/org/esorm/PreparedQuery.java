@@ -41,5 +41,15 @@ public interface PreparedQuery<R> extends Iterable<R>, Closeable {
 
     EntityConfiguration getResultConfiguration();
 
-    QueryIterator iterator();
+    QueryIterator<R> iterator();
+
+    QueryIterator<R> iterator(Object... params);
+
+    QueryIterator<R> iterator(Map<String, Object> params);
+
+    PreparedQuery<R> reset(Object... params);
+
+    PreparedQuery<R> reset(Map<String, Object> params);
+
+
 }
