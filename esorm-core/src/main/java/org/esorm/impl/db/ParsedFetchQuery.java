@@ -23,6 +23,8 @@ import org.esorm.ParsedQuery;
 import org.esorm.PreparedQuery;
 import org.esorm.RegisteredExceptionWrapper;
 import org.esorm.entity.db.ValueExpression;
+import org.esorm.impl.parameters.PreparedStatementParameterSetter;
+import org.esorm.parameters.ParameterMapper;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -38,16 +40,18 @@ public class ParsedFetchQuery implements ParsedQuery {
     private final String query;
     private final Map<ValueExpression, Integer> resultColumns;
     private final List<String> parameterIndexes;
+    private final ParameterMapper parameterMapper;
 
-    public ParsedFetchQuery(EntityConfiguration configuration, String query, Map<ValueExpression, Integer> resultColumns) {
-        this(configuration, query, resultColumns, null);
+    public ParsedFetchQuery(EntityConfiguration configuration, String query, ParameterMapper parameterMapper, Map<ValueExpression, Integer> resultColumns) {
+        this(configuration, query, parameterMapper, resultColumns, null);
     }
 
-    public ParsedFetchQuery(EntityConfiguration configuration, String query, Map<ValueExpression, Integer> resultColumns, List<String> parameterIndexes) {
+    public ParsedFetchQuery(EntityConfiguration configuration, String query, ParameterMapper parameterMapper, Map<ValueExpression, Integer> resultColumns, List<String> parameterIndexes) {
         this.configuration = configuration;
         this.query = query;
         this.resultColumns = resultColumns;
         this.parameterIndexes = parameterIndexes;
+        this.parameterMapper = parameterMapper;
     }
 
     public Type getType() {
@@ -61,9 +65,7 @@ public class ParsedFetchQuery implements ParsedQuery {
     public <R> PreparedQuery<R> prepare(Connection con, Object... params) {
         try {
             PreparedStatement stmt = con.prepareStatement(query);
-            for (int i = 0; i < params.length; i++) {
-                stmt.setObject(i + 1, params[i]);
-            }
+            parameterMapper.process(new PreparedStatementParameterSetter(stmt), params);
             return new PreparedFetchQuery<R>(configuration, stmt, resultColumns);
         } catch (SQLException e) {
             throw new RegisteredExceptionWrapper(e);

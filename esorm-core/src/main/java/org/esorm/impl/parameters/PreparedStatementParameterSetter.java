@@ -16,11 +16,29 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with EsORM.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.esorm;
+package org.esorm.impl.parameters;
+
+import org.esorm.RegisteredExceptionWrapper;
+import org.esorm.parameters.ParameterSetter;
+
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 
 /**
  * @author Vitalii Tymchyshyn
  */
-public interface ParameterTransformer {
-    Object transform(Object parameter);
+public class PreparedStatementParameterSetter implements ParameterSetter {
+    private final PreparedStatement statement;
+
+    public PreparedStatementParameterSetter(PreparedStatement statement) {
+        this.statement = statement;
+    }
+
+    public void setParameter(int number, Object value) {
+        try {
+            statement.setObject(number + 1, value);
+        } catch (SQLException e) {
+            throw new RegisteredExceptionWrapper(e);
+        }
+    }
 }

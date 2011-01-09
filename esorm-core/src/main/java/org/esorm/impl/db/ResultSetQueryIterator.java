@@ -38,6 +38,7 @@ public class ResultSetQueryIterator<E> implements QueryIterator<E> {
     private final EntityConfiguration configuration;
     private final ResultSet resultSet;
     private final Map<ValueExpression, Integer> resultColumns;
+    private boolean closed;
 
     public ResultSetQueryIterator(EntityConfiguration configuration, ResultSet resultSet, Map<ValueExpression, Integer> resultColumns) {
         this.configuration = configuration;
@@ -47,11 +48,11 @@ public class ResultSetQueryIterator<E> implements QueryIterator<E> {
 
     public boolean hasNext() {
         try {
-            if (resultSet.isClosed()) {
+            if (isClosed()) {
                 return false;
             }
             if (resultSet.isLast()) {
-                resultSet.close();
+                close();
                 return false;
             }
             return true;
@@ -60,9 +61,13 @@ public class ResultSetQueryIterator<E> implements QueryIterator<E> {
         }
     }
 
+    private boolean isClosed() throws SQLException {
+        return closed;
+    }
+
     public E next() {
         try {
-            if (resultSet.isClosed() || !resultSet.next()) {
+            if (isClosed() || !resultSet.next()) {
                 resultSet.close();
                 throw new NoSuchElementException();
             }
@@ -90,8 +95,9 @@ public class ResultSetQueryIterator<E> implements QueryIterator<E> {
 
     public void close() {
         try {
-            if (resultSet.isClosed())
+            if (isClosed())
                 return;
+            closed = true;
             resultSet.close();
         } catch (SQLException e) {
             throw new RegisteredExceptionWrapper(e);

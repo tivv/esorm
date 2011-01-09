@@ -23,6 +23,8 @@ import org.esorm.entity.db.Column;
 import org.esorm.entity.db.SelectExpression;
 import org.esorm.entity.db.ValueExpression;
 import org.esorm.impl.db.ParsedFetchQuery;
+import org.esorm.impl.parameters.IdParameterTransformer;
+import org.esorm.impl.parameters.TransformerParameterMapper;
 
 import java.util.HashMap;
 import java.util.Iterator;
@@ -91,7 +93,8 @@ public class Queries {
             pkColumn.appendQuery(query, tablesInvolved);
             query.append("=?");
         }
-        return new ParsedFetchQuery(configuration, query.toString(), resultColumns, null);
+        return new ParsedFetchQuery(configuration, query.toString(),
+                new TransformerParameterMapper(new IdParameterTransformer(), 0), resultColumns);
     }
 
 }
