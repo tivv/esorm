@@ -22,6 +22,7 @@ import org.esorm.EntityConfiguration;
 import org.esorm.ParsedQuery;
 import org.esorm.PreparedQuery;
 import org.esorm.entity.db.ValueExpression;
+import org.esorm.impl.QueryCache;
 import org.esorm.parameters.ParameterMapper;
 
 import java.sql.Connection;
@@ -59,7 +60,7 @@ public class ParsedFetchQuery implements ParsedQuery {
     }
 
     public <R> PreparedQuery<R> prepare(Connection con) {
-        return new PreparedFetchQuery<R>(con, queryCache, configuration, query, parameterMapper, resultColumns, parameterIndexes);
+        return new PreparedFetchQuery<R>(con, new QueryCache(), configuration, query, parameterMapper, resultColumns, parameterIndexes);
     }
 
     public <R> PreparedQuery<R> prepare(Connection con, Object... params) {
