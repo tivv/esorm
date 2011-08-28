@@ -29,8 +29,9 @@ import org.esorm.impl.FixedConnectionProvider;
  * @author Vitalii Tymchyshyn
  *
  */
-public class EsormUtils
+public final class EsormUtils
 {
+    private EsormUtils() {}
     public static ConnectionProvider connect(Connection con) {
         return new FixedConnectionProvider(con);
     }
