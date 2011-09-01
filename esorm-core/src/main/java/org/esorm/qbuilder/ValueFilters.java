@@ -1,6 +1,6 @@
 /**
- * 
- * Copyright 2010 Vitalii Tymchyshyn
+ *
+ * Copyright 2010-2011 Vitalii Tymchyshyn
  * This file is part of EsORM.
  *
  * EsORM is free software: you can redistribute it and/or modify
@@ -16,27 +16,18 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with EsORM.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.esorm;
-
-import java.sql.Connection;
-
-import javax.sql.DataSource;
-
-import org.esorm.impl.jdbc.DataSourceConnectionProvider;
-import org.esorm.impl.jdbc.FixedConnectionProvider;
+package org.esorm.qbuilder;
 
 /**
  * @author Vitalii Tymchyshyn
- *
  */
-public final class EsormUtils
-{
-    private EsormUtils() {}
-    public static ConnectionProvider connect(Connection con) {
-        return new FixedConnectionProvider(con);
-    }
+public interface ValueFilters<RET> {
+    FilterValue<RET> eq();
+    FilterValue<RET> gt();
+    FilterValue<RET> lt();
+    FilterValue<RET> ge();
+    FilterValue<RET> le();
+    RET isNull();
 
-    public static ConnectionProvider connect(DataSource ds) {
-        return new DataSourceConnectionProvider(ds);
-    }
+
 }

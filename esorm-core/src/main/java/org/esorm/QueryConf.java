@@ -20,6 +20,7 @@ package org.esorm;
 
 import org.esorm.impl.DefaultQueryConf;
 import org.esorm.impl.MutableEntityConfigurationImpl;
+import org.esorm.qbuilder.QueryBuilder;
 import org.esorm.utils.ParentedList;
 import org.esorm.utils.ReadOnlyReverseIterable;
 
@@ -325,6 +326,10 @@ public class QueryConf implements QueryRunner {
 
     public EntityConfiguration getConfiguration(Class<?> configurationClass) {
         return getConfiguration(configurationClass.getSimpleName(), configurationClass.getName(), null);
+    }
+
+    public QueryBuilder buildQuery() {
+        return getDataAccessor().buildQuery(this);
     }
 
     public QueryConf customize() {

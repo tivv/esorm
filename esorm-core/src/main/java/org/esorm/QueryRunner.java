@@ -18,6 +18,8 @@
  */
 package org.esorm;
 
+import org.esorm.qbuilder.QueryBuilder;
+
 import java.util.List;
 
 /**
@@ -64,5 +66,7 @@ public interface QueryRunner {
     EntityConfiguration getConfiguration(String name);
 
     EntityConfiguration getConfiguration(Class<?> configurationClass);
+
+    QueryBuilder buildQuery();
 }
 

@@ -18,6 +18,8 @@
  */
 package org.esorm;
 
+import org.esorm.qbuilder.QueryBuilder;
+
 /**
  * @author Vitalii Tymchyshyn
  */
@@ -29,4 +31,5 @@ public interface DataAccessor {
      */
     <T> T get(QueryRunner queryRunner, ParsedQuery query, Object... params);
 
+    QueryBuilder buildQuery(QueryRunner queryRunner);
 }

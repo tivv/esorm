@@ -16,7 +16,7 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with EsORM.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.esorm.impl;
+package org.esorm.impl.jdbc;
 
 import org.esorm.*;
 
@@ -80,7 +80,7 @@ public class DataAccessorImpl implements DataAccessor {
 
     private static class GetWorker<R> implements Worker<R, ParsedQuery, Object[]> {
         /* (non-Javadoc)
-         * @see org.esorm.impl.DataAccessorImpl.Worker#run(java.sql.Connection, org.esorm.QueryRunner, java.lang.Object, java.lang.Object)
+         * @see org.esorm.impl.jdbc.DataAccessorImpl.Worker#run(java.sql.Connection, org.esorm.QueryRunner, java.lang.Object, java.lang.Object)
          */
 
         public R run(Connection con, QueryRunner queryRunner,

@@ -1,6 +1,6 @@
 /**
- * 
- * Copyright 2010 Vitalii Tymchyshyn
+ *
+ * Copyright 2010-2011 Vitalii Tymchyshyn
  * This file is part of EsORM.
  *
  * EsORM is free software: you can redistribute it and/or modify
@@ -16,27 +16,30 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with EsORM.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.esorm;
+package org.esorm.qbuilder;
 
-import java.sql.Connection;
+import org.esorm.EntityConfiguration;
+import org.esorm.ParsedQuery;
+import org.esorm.PreparedQuery;
 
-import javax.sql.DataSource;
-
-import org.esorm.impl.jdbc.DataSourceConnectionProvider;
-import org.esorm.impl.jdbc.FixedConnectionProvider;
+import java.util.Map;
 
 /**
  * @author Vitalii Tymchyshyn
- *
  */
-public final class EsormUtils
-{
-    private EsormUtils() {}
-    public static ConnectionProvider connect(Connection con) {
-        return new FixedConnectionProvider(con);
-    }
+public interface QueryBuilder {
+    /**
+     * Specify what entities to select
+     * @return
+     */
+    QueryBuilder select(EntityConfiguration configuration);
 
-    public static ConnectionProvider connect(DataSource ds) {
-        return new DataSourceConnectionProvider(ds);
-    }
+    /**
+     * Specify filtering criteria
+     * @return
+     */
+    QueryFilters<QueryBuilder> filter();
+    ParsedQuery build();
+    <R> PreparedQuery<R> prepare();
+    <R> PreparedQuery<R> prepare(Map<String, Object> params);
 }

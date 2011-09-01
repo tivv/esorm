@@ -21,6 +21,8 @@ package org.esorm.impl;
 import org.esorm.*;
 import org.esorm.ann.Default;
 import org.esorm.ann.FirstIsDefault;
+import org.esorm.impl.jdbc.DataAccessorImpl;
+import org.esorm.qbuilder.QueryBuilder;
 
 import java.io.IOException;
 import java.net.URL;
@@ -139,6 +141,10 @@ public class DefaultQueryConf
 
     public EntityConfiguration getConfiguration(Class<?> configurationClass) {
         throw new IllegalStateException();
+    }
+
+    public QueryBuilder buildQuery() {
+        throw new UnsupportedOperationException();
     }
 
     @SuppressWarnings("unchecked")
