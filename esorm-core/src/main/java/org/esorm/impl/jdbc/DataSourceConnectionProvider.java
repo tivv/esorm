@@ -24,6 +24,7 @@ import java.sql.SQLException;
 import javax.sql.DataSource;
 
 import org.esorm.ConnectionProvider;
+import org.esorm.RegisteredExceptionWrapper;
 
 /**
  * @author Vitalii Tymchyshyn
@@ -57,18 +58,24 @@ implements ConnectionProvider
      * @see org.esorm.ConnectionProvider#takeConnection()
      */
     public Connection takeConnection()
-    throws SQLException
     {
-        return dataSource.getConnection();
+        try {
+            return dataSource.getConnection();
+        } catch (SQLException e) {
+            throw new RegisteredExceptionWrapper(e);
+        }
     }
 
     /* (non-Javadoc)
      * @see org.esorm.ConnectionProvider#returnConnection(java.sql.Connection)
      */
     public void returnConnection(Connection con)
-    throws SQLException
     {
-        con.close();
+        try {
+            con.close();
+        } catch (SQLException e) {
+            throw new RegisteredExceptionWrapper(e);
+        }
     }
 
 }

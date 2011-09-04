@@ -27,7 +27,7 @@ import java.sql.SQLException;
  */
 public interface ConnectionProvider
 {
-    Connection takeConnection() throws SQLException;
-    void returnConnection(Connection con) throws SQLException;
+    Connection takeConnection();
+    void returnConnection(Connection con);
 
 }

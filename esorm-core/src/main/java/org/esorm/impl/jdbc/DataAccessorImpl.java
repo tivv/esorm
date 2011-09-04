@@ -19,6 +19,7 @@
 package org.esorm.impl.jdbc;
 
 import org.esorm.*;
+import org.esorm.qbuilder.QueryBuilder;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -35,6 +36,10 @@ public class DataAccessorImpl implements DataAccessor {
 
     private static final GetWorker<Object> GET_WORKER = new GetWorker<Object>();
     private static final Logger LOG = Logger.getLogger(DataAccessorImpl.class.getName());
+
+    public QueryBuilder buildQuery(QueryRunner queryRunner) {
+        return new SQLQueryBuilder();
+    }
 
     /* (non-Javadoc)
      * @see org.esorm.DataAccessor#get(org.esorm.QueryRunner, org.esorm.EntityDescription, java.lang.Object)
