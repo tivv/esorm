@@ -22,6 +22,7 @@ import org.esorm.PreparedQuery;
 import org.esorm.QueryRunner;
 import org.esorm.qbuilder.QueryBuilder;
 
+import java.sql.Connection;
 import java.util.Map;
 
 /**
@@ -35,7 +36,7 @@ public abstract class AQueryBuilder implements QueryBuilder{
     }
 
     public <R> PreparedQuery<R> prepare() {
-        return build().prepare(runner.getConnectionProvider().takeConnection());
+        return build().prepare(runner.getConnectionProvider(Connection.class).takeConnection());
     }
 
     public <R> PreparedQuery<R> prepare(Map<String, Object> params) {

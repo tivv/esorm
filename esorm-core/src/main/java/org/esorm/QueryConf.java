@@ -35,7 +35,8 @@ import java.util.Map;
 public class QueryConf implements QueryRunner {
     private final QueryRunner parent;
     private ErrorHandler errorHandler;
-    private ConnectionProvider connectionProvider;
+    private List<ConnectionProvider> connectionProviders;
+    private Iterable<ConnectionProvider> connectionProvidersIterable;
     private DataAccessor dataAccessor;
     private List<EntitiesConfigurator> entitiesConfigurators;
     private Iterable<EntitiesConfigurator> entitiesConfiguratorsIterable;
@@ -81,16 +82,39 @@ public class QueryConf implements QueryRunner {
         return this;
     }
 
-    public ConnectionProvider getConnectionProvider() {
-        return connectionProvider == null ? parent.getConnectionProvider() : connectionProvider;
+    public <T> ConnectionProvider<T> getConnectionProvider(Class<T> connectionClass) {
+        for (ConnectionProvider provider: getConnectionProvidersIterable()) {
+            if (connectionClass.isAssignableFrom(provider.getConnectionClass()))
+                return provider;
+        }
+        throw new IllegalArgumentException("No connection provider registered for " + connectionClass);
     }
 
-    public void setConnectionProvider(ConnectionProvider connectionProvider) {
-        this.connectionProvider = connectionProvider;
+    public List<ConnectionProvider> getConnectionProviders() {
+        if (connectionProviders == null) {
+            connectionProviders = new ParentedList<ConnectionProvider>(parent.getConnectionProviders());
+        }
+        return connectionProviders;
+    }
+
+    public Iterable<ConnectionProvider> getConnectionProvidersIterable() {
+        if (connectionProviders == null){
+            return parent.getConnectionProvidersIterable();
+        } else {
+            if (connectionProvidersIterable == null) {
+                connectionProvidersIterable = new ReadOnlyReverseIterable<ConnectionProvider>(connectionProviders);
+            }
+            return connectionProvidersIterable;
+        }
+    }
+
+    public void setConnectionProviders(List<ConnectionProvider> connectionProviders) {
+        this.connectionProviders = connectionProviders;
+        this.connectionProvidersIterable = null;
     }
 
     public QueryConf connectionProvider(ConnectionProvider connectionProvider) {
-        setConnectionProvider(connectionProvider);
+        getConnectionProviders().add(connectionProvider);
         return this;
     }
 

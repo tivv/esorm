@@ -28,7 +28,7 @@ import org.esorm.ConnectionProvider;
  *
  */
 public class FixedConnectionProvider
-implements ConnectionProvider
+implements ConnectionProvider<Connection>
 {
     private final Connection connection;
     
@@ -37,9 +37,13 @@ implements ConnectionProvider
         this.connection = connection;
     }
 
+    public Class<Connection> getConnectionClass() {
+        return Connection.class;
+    }
+
     /* (non-Javadoc)
-     * @see org.esorm.ConnectionProvider#takeConnection()
-     */
+    * @see org.esorm.ConnectionProvider#takeConnection()
+    */
     public Connection takeConnection()
     {
         return connection;

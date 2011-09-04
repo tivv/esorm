@@ -49,7 +49,7 @@ public class DefaultQueryConf
         return ErrorHandlerImpl.INSTANCE;
     }
 
-    public ConnectionProvider getConnectionProvider() {
+    public <T> ConnectionProvider<T> getConnectionProvider(Class<T> connectionClass) {
         throw new UnsupportedOperationException("There is no default ConnectionProvider. Please supply one with setConnectionProvider method");
     }
 

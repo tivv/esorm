@@ -57,7 +57,7 @@ public class DataAccessorImpl implements DataAccessor {
         Connection con = null;
         boolean hadError = true;
         try {
-            con = queryRunner.getConnectionProvider().takeConnection();
+            con = queryRunner.getConnectionProvider(Connection.class).takeConnection();
             T rc = worker.run(con, queryRunner, param1, param2);
             hadError = false;
             return rc;
@@ -67,7 +67,7 @@ public class DataAccessorImpl implements DataAccessor {
         } finally {
             if (con != null) {
                 try {
-                    queryRunner.getConnectionProvider().returnConnection(con);
+                    queryRunner.getConnectionProvider(Connection.class).returnConnection(con);
                 } catch (Exception e) {
                     if (!hadError) {
                         queryRunner.getErrorHandler().handle(e);

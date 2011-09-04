@@ -28,7 +28,7 @@ import java.util.List;
 public interface QueryRunner {
     public ErrorHandler getErrorHandler();
 
-    public ConnectionProvider getConnectionProvider();
+    public <T> ConnectionProvider<T> getConnectionProvider(Class<T> connectionClass);
 
     public DataAccessor getDataAccessor();
 
@@ -68,5 +68,9 @@ public interface QueryRunner {
     EntityConfiguration getConfiguration(Class<?> configurationClass);
 
     QueryBuilder buildQuery();
+
+    List<ConnectionProvider> getConnectionProviders();
+
+    Iterable<ConnectionProvider> getConnectionProvidersIterable();
 }
 

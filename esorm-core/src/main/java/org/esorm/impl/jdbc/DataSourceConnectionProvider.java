@@ -31,7 +31,7 @@ import org.esorm.RegisteredExceptionWrapper;
  *
  */
 public class DataSourceConnectionProvider
-implements ConnectionProvider
+implements ConnectionProvider<Connection>
 {
     private DataSource dataSource;
 
@@ -54,9 +54,13 @@ implements ConnectionProvider
         this.dataSource = dataSource;
     }
 
+    public Class<Connection> getConnectionClass() {
+        return Connection.class;
+    }
+
     /* (non-Javadoc)
-     * @see org.esorm.ConnectionProvider#takeConnection()
-     */
+    * @see org.esorm.ConnectionProvider#takeConnection()
+    */
     public Connection takeConnection()
     {
         try {

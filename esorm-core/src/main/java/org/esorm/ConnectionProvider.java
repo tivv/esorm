@@ -25,9 +25,10 @@ import java.sql.SQLException;
  * @author Vitalii Tymchyshyn
  *
  */
-public interface ConnectionProvider
+public interface ConnectionProvider<T>
 {
-    Connection takeConnection();
-    void returnConnection(Connection con);
+    Class<T> getConnectionClass();
+    T takeConnection();
+    void returnConnection(T con);
 
 }
