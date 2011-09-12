@@ -21,6 +21,7 @@ package org.esorm.qbuilder;
 import org.esorm.EntityConfiguration;
 import org.esorm.ParsedQuery;
 import org.esorm.PreparedQuery;
+import org.esorm.QueryIterator;
 
 import java.util.Map;
 
@@ -40,6 +41,6 @@ public interface QueryBuilder {
      */
     QueryFilters<QueryBuilder> filter();
     ParsedQuery build();
-    <R> PreparedQuery<R> prepare();
-    <R> PreparedQuery<R> prepare(Map<String, Object> params);
+    <R> QueryIterator<R> iterator();
+    <R> QueryIterator<R> iterator(Map<String, Object> params);
 }

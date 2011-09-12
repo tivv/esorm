@@ -19,6 +19,8 @@
 package org.esorm;
 
 import java.sql.Connection;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.sql.DataSource;
 
@@ -31,6 +33,7 @@ import org.esorm.impl.jdbc.FixedConnectionProvider;
  */
 public final class EsormUtils
 {
+    private static Logger LOG = Logger.getLogger(EsormUtils.class.getName());
     private EsormUtils() {}
     public static ConnectionProvider connect(Connection con) {
         return new FixedConnectionProvider(con);
@@ -38,5 +41,23 @@ public final class EsormUtils
 
     public static ConnectionProvider connect(DataSource ds) {
         return new DataSourceConnectionProvider(ds);
+    }
+
+    public static <R,C> R perform(QueryRunner queryRunner, Class<C> connectionClass, PerformRunner<R, C> runner) {
+        ConnectionProvider<C> provider = queryRunner.getConnectionProvider(connectionClass);
+        C connection = provider.takeConnection();
+        try {
+            return runner.perform(queryRunner, connection);
+        } finally {
+            try {
+                provider.returnConnection(connection);
+            } catch (Exception e) {
+                LOG.log(Level.WARNING, "Exception closing connection", e);
+            }
+        }
+    }
+
+    public interface  PerformRunner<R,C> {
+        R perform(QueryRunner queryRunner, C connection);
     }
 }

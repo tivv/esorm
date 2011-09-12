@@ -28,7 +28,18 @@ import java.util.List;
 public interface QueryRunner {
     public ErrorHandler getErrorHandler();
 
+    /**
+     *
+     * @param connectionClass
+     * @param <T>
+     * @return
+     * @throws IllegalArgumentException if there is no provider for given class
+     */
     public <T> ConnectionProvider<T> getConnectionProvider(Class<T> connectionClass);
+
+    List<ConnectionProvider> getConnectionProviders();
+
+    Iterable<ConnectionProvider> getConnectionProvidersIterable();
 
     public DataAccessor getDataAccessor();
 
@@ -68,9 +79,5 @@ public interface QueryRunner {
     EntityConfiguration getConfiguration(Class<?> configurationClass);
 
     QueryBuilder buildQuery();
-
-    List<ConnectionProvider> getConnectionProviders();
-
-    Iterable<ConnectionProvider> getConnectionProvidersIterable();
 }
 

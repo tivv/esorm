@@ -18,35 +18,169 @@
  */
 package org.esorm.impl.jdbc;
 
-import org.esorm.EntityConfiguration;
-import org.esorm.ParsedQuery;
-import org.esorm.PreparedQuery;
+import org.esorm.*;
 import org.esorm.qbuilder.QueryBuilder;
 import org.esorm.qbuilder.QueryFilters;
+import org.esorm.qbuilder.ValueFilters;
 
+import java.sql.Connection;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 /**
  * @author Vitalii Tymchyshyn
  */
 public class SQLQueryBuilder implements QueryBuilder{
+
+    private final QueryRunner queryRunner;
+    private EntityConfiguration entity;
+    private final SQLQueryFilters filters = new SQLQueryFilters<QueryBuilder>(operation, this);
+
+    public SQLQueryBuilder(QueryRunner queryRunner) {
+        this.queryRunner = queryRunner;
+    }
+
     public QueryBuilder select(EntityConfiguration configuration) {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        if (entity != null) {
+            throw new IllegalStateException("Entity is already set in this query");
+        }
+        this.entity = configuration;
+        return this;
     }
 
     public QueryFilters<QueryBuilder> filter() {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return filters;
     }
 
     public ParsedQuery build() {
         return null;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
-    public <R> PreparedQuery<R> prepare() {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+    public <R> QueryIterator<R> iterator() {
+        return EsormUtils.perform(queryRunner, Connection.class, new EsormUtils.PerformRunner<QueryIterator<R>, Connection>() {
+            public QueryIterator<R> perform(QueryRunner queryRunner, Connection connection) {
+                return build().<R>prepare(connection).iterator();
+            }
+        });
     }
 
-    public <R> PreparedQuery<R> prepare(Map<String, Object> params) {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+    public <R> QueryIterator<R> iterator(final Map<String, Object> params) {
+        return EsormUtils.perform(queryRunner, Connection.class, new EsormUtils.PerformRunner<QueryIterator<R>, Connection>() {
+            public QueryIterator<R> perform(QueryRunner queryRunner, Connection connection) {
+                return build().<R>prepare(connection).iterator(params);
+            }
+        });
     }
+
+    private interface SQLQueryFilter {
+        void addQueryText(StringBuilder builder);
+        boolean isEmpty();
+    }
+
+    private static class NotSQLQueryBuilder<T> implements SQLQueryFilter{
+        private final SQLQueryFilters<T> subFilter;
+
+        public NotSQLQueryBuilder(T ret) {
+            subFilter = new SQLQueryFilters<T>(ret);
+        }
+
+        public boolean isEmpty() {
+            return subFilter.isEmpty();
+        }
+
+        public SQLQueryFilters<T> getSubFilter() {
+            return subFilter;
+        }
+
+        public void addQueryText(StringBuilder builder) {
+            builder.append("not(");
+            subFilter.addQueryText(builder);
+            builder.append(')');
+        }
+    }
+
+    private static class SQLQueryFilters<T> implements QueryFilters<T>, SQLQueryFilter {
+        private final T ret;
+        private final String operation;
+        private List<SQLQueryFilter> filters = new ArrayList<SQLQueryFilter>();
+
+        public SQLQueryFilters(T ret) {
+            this("and", ret);
+        }
+
+        public SQLQueryFilters(String operation, T ret) {
+            this.operation = operation;
+            this.ret = ret;
+        }
+
+        public void addQueryText(StringBuilder builder) {
+            boolean first = true;
+            for (SQLQueryFilter filter : filters) {
+                if (!filter.isEmpty()) {
+                    if (!first) {
+                        builder.append(' ').append(operation).append(' ');
+                    }
+                    builder.append('(');
+                    filter.addQueryText(builder);
+                    builder.append(')');
+                    first = false;
+                }
+            }
+            if (first)
+                throw new IllegalStateException("Can't add empty filter to " + builder);
+        }
+
+        public boolean isEmpty() {
+            for (SQLQueryFilter filter : filters) {
+                if (!filter.isEmpty())
+                    return false;
+            }
+            return true;
+        }
+
+        public QueryFilters<QueryFilters<T>> and() {
+            SQLQueryFilters<QueryFilters<T>> rc = new SQLQueryFilters<QueryFilters<T>>(this);
+            filters.add(rc);
+            return rc;
+
+        }
+
+        public QueryFilters<QueryFilters<T>> or() {
+            SQLQueryFilters<QueryFilters<T>> rc = new SQLQueryFilters<QueryFilters<T>>("or", this);
+            filters.add(rc);
+            return rc;
+        }
+
+        public QueryFilters<QueryFilters<T>> not() {
+            NotSQLQueryBuilder<QueryFilters<T>> notFilter = new NotSQLQueryBuilder<QueryFilters<T>>(this);
+            filters.add(notFilter);
+            return notFilter.getSubFilter();
+        }
+
+        public QueryFilters<T> ql(String textFilter) {
+            throw new UnsupportedOperationException();
+        }
+
+        public T done() {
+            return ret;
+        }
+
+        public ValueFilters<QueryFilters<T>> property(String name) {
+            throw new UnsupportedOperationException();
+        }
+
+        public ValueFilters<QueryFilters<T>> id() {
+            throw new UnsupportedOperationException();
+        }
+
+        public ValueFilters<QueryFilters<T>> query(ParsedQuery query) {
+            throw new UnsupportedOperationException();
+        }
+
+        public ValueFilters<QueryFilters<T>> expression(String value) {
+            throw new UnsupportedOperationException();
+        }
+    }
+}
 }

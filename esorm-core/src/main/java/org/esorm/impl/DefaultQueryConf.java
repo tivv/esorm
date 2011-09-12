@@ -49,8 +49,16 @@ public class DefaultQueryConf
         return ErrorHandlerImpl.INSTANCE;
     }
 
+    public List<ConnectionProvider> getConnectionProviders() {
+        return Collections.emptyList();
+    }
+
+    public Iterable<ConnectionProvider> getConnectionProvidersIterable() {
+        return Collections.emptyList();
+    }
+
     public <T> ConnectionProvider<T> getConnectionProvider(Class<T> connectionClass) {
-        throw new UnsupportedOperationException("There is no default ConnectionProvider. Please supply one with setConnectionProvider method");
+        throw new IllegalArgumentException("There is no default ConnectionProvider. Please supply one with connectionProvider method");
     }
 
     /* (non-Javadoc)

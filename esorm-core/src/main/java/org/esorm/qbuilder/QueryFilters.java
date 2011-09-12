@@ -26,8 +26,8 @@ import org.esorm.ParsedQuery;
 public interface QueryFilters<RET> {
     QueryFilters<QueryFilters<RET>> and();
     QueryFilters<QueryFilters<RET>> or();
-    QueryFilters<RET> not();
-    QueryFilters<RET> textFilter(String textFilter);
+    QueryFilters<QueryFilters<RET>> not();
+    QueryFilters<RET> ql(String textFilter);
     RET done();
     ValueFilters<QueryFilters<RET>> property(String name);
     ValueFilters<QueryFilters<RET>> id();
