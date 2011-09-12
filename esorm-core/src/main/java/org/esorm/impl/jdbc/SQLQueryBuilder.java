@@ -35,7 +35,7 @@ public class SQLQueryBuilder implements QueryBuilder{
 
     private final QueryRunner queryRunner;
     private EntityConfiguration entity;
-    private final SQLQueryFilters filters = new SQLQueryFilters<QueryBuilder>(operation, this);
+    private final SQLQueryFilters filters = new SQLQueryFilters<QueryBuilder>(this);
 
     public SQLQueryBuilder(QueryRunner queryRunner) {
         this.queryRunner = queryRunner;
