@@ -19,6 +19,8 @@
 package org.esorm.impl.jdbc;
 
 import org.esorm.*;
+import org.esorm.entity.db.SelectExpression;
+import org.esorm.qbuilder.FilterValue;
 import org.esorm.qbuilder.QueryBuilder;
 import org.esorm.qbuilder.QueryFilters;
 import org.esorm.qbuilder.ValueFilters;
@@ -27,6 +29,7 @@ import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * @author Vitalii Tymchyshyn
@@ -78,7 +81,7 @@ public class SQLQueryBuilder implements QueryBuilder{
         boolean isEmpty();
     }
 
-    private static class NotSQLQueryBuilder<T> implements SQLQueryFilter{
+    private class NotSQLQueryBuilder<T> implements SQLQueryFilter{
         private final SQLQueryFilters<T> subFilter;
 
         public NotSQLQueryBuilder(T ret) {
@@ -100,7 +103,7 @@ public class SQLQueryBuilder implements QueryBuilder{
         }
     }
 
-    private static class SQLQueryFilters<T> implements QueryFilters<T>, SQLQueryFilter {
+    private class SQLQueryFilters<T> implements QueryFilters<T>, SQLQueryFilter {
         private final T ret;
         private final String operation;
         private List<SQLQueryFilter> filters = new ArrayList<SQLQueryFilter>();
@@ -139,23 +142,21 @@ public class SQLQueryBuilder implements QueryBuilder{
             return true;
         }
 
-        public QueryFilters<QueryFilters<T>> and() {
-            SQLQueryFilters<QueryFilters<T>> rc = new SQLQueryFilters<QueryFilters<T>>(this);
+        private <X extends SQLQueryFilter> X addFilter(X rc) {
             filters.add(rc);
             return rc;
+        }
 
+        public QueryFilters<QueryFilters<T>> and() {
+            return addFilter(new SQLQueryFilters<QueryFilters<T>>(this));
         }
 
         public QueryFilters<QueryFilters<T>> or() {
-            SQLQueryFilters<QueryFilters<T>> rc = new SQLQueryFilters<QueryFilters<T>>("or", this);
-            filters.add(rc);
-            return rc;
+            return addFilter(new SQLQueryFilters<QueryFilters<T>>("or", this));
         }
 
         public QueryFilters<QueryFilters<T>> not() {
-            NotSQLQueryBuilder<QueryFilters<T>> notFilter = new NotSQLQueryBuilder<QueryFilters<T>>(this);
-            filters.add(notFilter);
-            return notFilter.getSubFilter();
+            return addFilter(new NotSQLQueryBuilder<QueryFilters<T>>(this)).getSubFilter();
         }
 
         public QueryFilters<T> ql(String textFilter) {
@@ -171,7 +172,7 @@ public class SQLQueryBuilder implements QueryBuilder{
         }
 
         public ValueFilters<QueryFilters<T>> id() {
-            throw new UnsupportedOperationException();
+            return addFilter(new SQLValueFilter<QueryFilters<T>>(this, new IdSQLValue()));
         }
 
         public ValueFilters<QueryFilters<T>> query(ParsedQuery query) {
@@ -182,5 +183,104 @@ public class SQLQueryBuilder implements QueryBuilder{
             throw new UnsupportedOperationException();
         }
     }
+
+    private static abstract class SQLValue {
+        protected abstract void addValue(StringBuilder builder);
+    }
+    private class IdSQLValue extends SQLValue {
+        @Override
+        protected void addValue(StringBuilder builder) {
+            Set<SelectExpression> idExpressions = entity.getIdColumns().keySet();
+            if (idExpressions.size() != 1)
+                throw new UnsupportedOperationException("There should be only 1 id column in " + entity + " and found " +
+                idExpressions.size());
+            idExpressions.iterator().next().appendQuery(builder, "this_");
+        }
+    }
+    private static class NullSQLValue extends SQLValue {
+        private static NullSQLValue INSTANCE = new NullSQLValue();
+
+        @Override
+        protected void addValue(StringBuilder builder) {
+            builder.append("null");
+        }
+    }
+
+    private static class SQLValueFilter<R> implements SQLQueryFilter, ValueFilters<R>, FilterValue<R>{
+        private final SQLValue leftValue;
+        private final R ret;
+        private String operation;
+        private SQLValue rightValue;
+
+        public SQLValueFilter(R ret, SQLValue leftValue) {
+            this.leftValue = leftValue;
+            this.ret = ret;
+        }
+
+        public void addQueryText(StringBuilder builder) {
+            leftValue.addValue(builder);
+            builder.append(operation);
+            rightValue.addValue(builder);
+        }
+
+        public boolean isEmpty() {
+            if (operation == null || rightValue == null)
+                throw new IllegalStateException("Filter data was not filled for " + leftValue);
+            return false;
+        }
+
+        public FilterValue<R> eq() {
+            setOperation("=");
+            return this;
+        }
+
+        public FilterValue<R> gt() {
+            setOperation(">");
+            return this;
+        }
+
+        public FilterValue<R> lt() {
+            setOperation("<");
+            return this;
+        }
+
+        public FilterValue<R> ge() {
+            setOperation(">=");
+            return this;
+        }
+
+        public FilterValue<R> le() {
+            setOperation("<=");
+            return this;
+        }
+
+        public R value(Object value) {
+            throw new UnsupportedOperationException();
+        }
+
+        public R param(String name) {
+            throw new UnsupportedOperationException();
+        }
+
+        public R query(ParsedQuery subQuery) {
+            throw new UnsupportedOperationException();
+        }
+
+        public R expression(String expression) {
+            throw new UnsupportedOperationException();
+        }
+
+        public R isNull() {
+            setOperation(" is ");
+            rightValue = NullSQLValue.INSTANCE;
+            return ret;
+        }
+
+        private void setOperation(String operation) {
+            if (this.operation != null)
+                throw new IllegalStateException("You must not call operation method multiple times");
+            this.operation = operation;
+        }
+    }
 }
-}
+
