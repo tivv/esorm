@@ -19,17 +19,21 @@
 package org.esorm.impl.jdbc;
 
 import org.esorm.*;
+import org.esorm.entity.EntityProperty;
+import org.esorm.entity.db.Column;
 import org.esorm.entity.db.SelectExpression;
+import org.esorm.entity.db.ValueExpression;
+import org.esorm.impl.db.ParsedFetchQuery;
+import org.esorm.impl.parameters.*;
+import org.esorm.parameters.ParameterMapper;
 import org.esorm.qbuilder.FilterValue;
 import org.esorm.qbuilder.QueryBuilder;
 import org.esorm.qbuilder.QueryFilters;
 import org.esorm.qbuilder.ValueFilters;
 
+import javax.security.auth.login.Configuration;
 import java.sql.Connection;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * @author Vitalii Tymchyshyn
@@ -57,7 +61,69 @@ public class SQLQueryBuilder implements QueryBuilder{
     }
 
     public ParsedQuery build() {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        StringBuilder query = new StringBuilder();
+        Map<SelectExpression, String> tablesInvolved = new HashMap<SelectExpression, String>();
+        final Map<ValueExpression, Integer> resultColumns = new HashMap<ValueExpression, Integer>();
+        query.append("select ");
+        Iterable<EntityProperty> properties = entity.getProperties();
+        for (EntityProperty property : properties) {
+            ValueExpression expression = property.getExpression();
+            if (!resultColumns.containsKey(expression)) {
+                int num = resultColumns.size() + 1;
+                resultColumns.put(expression, num);
+                for (SelectExpression table : expression.getTables()) {
+                    if (!tablesInvolved.containsKey(table)) {
+                        int tableNum = tablesInvolved.size() + 1;
+                        tablesInvolved.put(table, "t" + tableNum);
+                    }
+                }
+                if (num != 1)
+                    query.append(',');
+                expression.appendQuery(query, tablesInvolved);
+            }
+        }
+        if (resultColumns.isEmpty())
+            throw new IllegalArgumentException("Nothing to select for " + entity.getName());
+        //TODO - complex primary key by id / name
+        query.append(" from ");
+        Iterable<Column> firstTablePK = null;
+        Map<SelectExpression, ? extends Iterable<Column>> primaryKeys = entity.getIdColumns();
+        for (Map.Entry<SelectExpression, String> e : tablesInvolved.entrySet()) {
+            if (firstTablePK != null)
+                query.append(" join ");
+            e.getKey().appendQuery(query, e.getValue());
+            Iterable<Column> primaryKey = primaryKeys.get(e.getKey());
+            if (primaryKey == null)
+                throw new IllegalStateException("Table " + e.getKey() + " does not have primary key specified");
+            if (firstTablePK == null) {
+                firstTablePK = primaryKey;
+            } else {
+                Iterator<Column> primaryKeyIterator = primaryKey.iterator();
+                String toAppend = " on ";
+                for (Column firstColumn : firstTablePK) {
+                    //TODO add .hasNext check
+                    Column secondColumn = primaryKeyIterator.next();
+                    query.append(toAppend);
+                    toAppend = " and ";
+                    firstColumn.appendQuery(query, tablesInvolved);
+                    query.append("=");
+                    secondColumn.appendQuery(query, tablesInvolved);
+                }
+                //TODO add .hasNext check
+            }
+        }
+        ParameterMapper parameterMapper;
+        if (filters.isEmpty()) {
+            parameterMapper = NoParameterMapper.INSTANCE;
+        } else {
+            query.append(" where ");
+            filters.addQueryText(query);
+            parameterMapper = filters.getParameterMapper();
+            if (parameterMapper == null)
+                parameterMapper = NoParameterMapper.INSTANCE;
+        }
+        return new ParsedFetchQuery(entity, query.toString(),
+                parameterMapper, resultColumns);
     }
 
     public <R> QueryIterator<R> iterator() {
@@ -79,6 +145,8 @@ public class SQLQueryBuilder implements QueryBuilder{
     private interface SQLQueryFilter {
         void addQueryText(StringBuilder builder);
         boolean isEmpty();
+
+        ParameterMapper getParameterMapper();
     }
 
     private class NotSQLQueryBuilder<T> implements SQLQueryFilter{
@@ -100,6 +168,10 @@ public class SQLQueryBuilder implements QueryBuilder{
             builder.append("not(");
             subFilter.addQueryText(builder);
             builder.append(')');
+        }
+
+        public ParameterMapper getParameterMapper() {
+            return subFilter.getParameterMapper();
         }
     }
 
@@ -182,10 +254,39 @@ public class SQLQueryBuilder implements QueryBuilder{
         public ValueFilters<QueryFilters<T>> expression(String value) {
             throw new UnsupportedOperationException();
         }
+
+        public ParameterMapper getParameterMapper() {
+            switch (filters.size()) {
+                case 0:
+                    return null;
+                case 1:
+                    return filters.get(0).getParameterMapper();
+                default:
+                    List<ParameterMapper> childrenMappers = new ArrayList<ParameterMapper>(filters.size());
+                    for (SQLQueryFilter child : filters) {
+                        ParameterMapper childMapper = child.getParameterMapper();
+                        if (childMapper != null)
+                            childrenMappers.add(childMapper);
+                    }
+                    return getParameterMapper(childrenMappers);
+            }
+        }
+
+        private ParameterMapper getParameterMapper(List<ParameterMapper> childrenMappers) {
+            switch (childrenMappers.size()) {
+                case 0:
+                    return null;
+                case 1:
+                    return childrenMappers.get(0);
+                default:
+                    return new MultiParameterMapper(childrenMappers.toArray(new ParameterMapper[childrenMappers.size()]));
+            }
+        }
     }
 
     private static abstract class SQLValue {
         protected abstract void addValue(StringBuilder builder);
+        protected ParameterMapper getParameterMapper() {return null;}
     }
     private class IdSQLValue extends SQLValue {
         @Override
@@ -195,6 +296,11 @@ public class SQLQueryBuilder implements QueryBuilder{
                 throw new UnsupportedOperationException("There should be only 1 id column in " + entity + " and found " +
                 idExpressions.size());
             idExpressions.iterator().next().appendQuery(builder, "this_");
+        }
+
+        @Override
+        protected ParameterMapper getParameterMapper() {
+            return new TransformerParameterMapper(new IdParameterTransformer(), );
         }
     }
     private static class NullSQLValue extends SQLValue {
@@ -221,6 +327,17 @@ public class SQLQueryBuilder implements QueryBuilder{
             leftValue.addValue(builder);
             builder.append(operation);
             rightValue.addValue(builder);
+        }
+
+        @Override
+        public ParameterMapper getParameterMapper() {
+            ParameterMapper left = leftValue.getParameterMapper();
+            ParameterMapper right = rightValue.getParameterMapper();
+            if (left == null)
+                return right;
+            if (right == null)
+                return left;
+            return new MultiParameterMapper(left, right);
         }
 
         public boolean isEmpty() {
