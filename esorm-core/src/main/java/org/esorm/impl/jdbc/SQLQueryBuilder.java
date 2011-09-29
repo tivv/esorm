@@ -98,7 +98,7 @@ public class SQLQueryBuilder implements QueryBuilder {
                 query.append(" join ");
             e.getKey().appendQuery(query, e.getValue());
             Iterable<Column> primaryKey = primaryKeys.get(e.getKey());
-            if (primaryKey == null)
+            if (primaryKey == null && tablesInvolved.size() > 1)
                 throw new IllegalStateException("Table " + e.getKey() + " does not have primary key specified");
             if (firstTablePK == null) {
                 firstTablePK = primaryKey;
