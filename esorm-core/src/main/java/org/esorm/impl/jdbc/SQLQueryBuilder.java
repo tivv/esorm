@@ -24,21 +24,25 @@ import org.esorm.entity.db.Column;
 import org.esorm.entity.db.SelectExpression;
 import org.esorm.entity.db.ValueExpression;
 import org.esorm.impl.db.ParsedFetchQuery;
-import org.esorm.impl.parameters.*;
+import org.esorm.impl.parameters.MultiParameterMapper;
+import org.esorm.impl.parameters.TransformerParameterMapper;
 import org.esorm.parameters.ParameterMapper;
+import org.esorm.parameters.ParameterTransformer;
 import org.esorm.qbuilder.FilterValue;
 import org.esorm.qbuilder.QueryBuilder;
 import org.esorm.qbuilder.QueryFilters;
 import org.esorm.qbuilder.ValueFilters;
 
-import javax.security.auth.login.Configuration;
 import java.sql.Connection;
 import java.util.*;
+
+import static org.esorm.utils.IterableUtils.getFirstValue;
+import static org.esorm.utils.IterableUtils.toList;
 
 /**
  * @author Vitalii Tymchyshyn
  */
-public class SQLQueryBuilder implements QueryBuilder{
+public class SQLQueryBuilder implements QueryBuilder {
 
     private final QueryRunner queryRunner;
     private EntityConfiguration entity;
@@ -61,8 +65,9 @@ public class SQLQueryBuilder implements QueryBuilder{
     }
 
     public ParsedQuery build() {
-        StringBuilder query = new StringBuilder();
-        Map<SelectExpression, String> tablesInvolved = new HashMap<SelectExpression, String>();
+        BuilderState builderState = new BuilderState();
+        StringBuilder query = builderState.getStringBuilder();
+        Map<SelectExpression, String> tablesInvolved = builderState.tablesInvolved;
         final Map<ValueExpression, Integer> resultColumns = new HashMap<ValueExpression, Integer>();
         query.append("select ");
         Iterable<EntityProperty> properties = entity.getProperties();
@@ -112,18 +117,12 @@ public class SQLQueryBuilder implements QueryBuilder{
                 //TODO add .hasNext check
             }
         }
-        ParameterMapper parameterMapper;
-        if (filters.isEmpty()) {
-            parameterMapper = NoParameterMapper.INSTANCE;
-        } else {
+        if (!filters.prepare()) {
             query.append(" where ");
-            filters.addQueryText(query);
-            parameterMapper = filters.getParameterMapper();
-            if (parameterMapper == null)
-                parameterMapper = NoParameterMapper.INSTANCE;
+            filters.addQueryText(builderState);
         }
         return new ParsedFetchQuery(entity, query.toString(),
-                parameterMapper, resultColumns);
+                builderState.getParameterMapper(), resultColumns);
     }
 
     public <R> QueryIterator<R> iterator() {
@@ -142,37 +141,137 @@ public class SQLQueryBuilder implements QueryBuilder{
         });
     }
 
-    private interface SQLQueryFilter {
-        void addQueryText(StringBuilder builder);
-        boolean isEmpty();
+    @SuppressWarnings({"UnusedDeclaration"})
+    private class BuilderState implements Appendable {
+        private final StringBuilder stringBuilder = new StringBuilder();
+        private List<ParameterMapper> mappers = new ArrayList<ParameterMapper>();
+        Map<SelectExpression, String> tablesInvolved = new HashMap<SelectExpression, String>();
 
-        ParameterMapper getParameterMapper();
+        public StringBuilder getStringBuilder() {
+            return stringBuilder;
+        }
+
+        public Map<SelectExpression, String> getTablesInvolved() {
+            return tablesInvolved;
+        }
+
+        private ParameterMapper getParameterMapper() {
+            switch (mappers.size()) {
+                case 0:
+                    return null;
+                case 1:
+                    return mappers.get(0);
+                default:
+                    return new MultiParameterMapper(mappers.toArray(new ParameterMapper[mappers.size()]));
+            }
+        }
+
+        public BuilderState appendParameter(ParameterMapper mapper) {
+            mappers.add(mapper);
+            return this;
+        }
+
+        public BuilderState appendParameter(ParameterTransformer transformer) {
+            mappers.add(new TransformerParameterMapper(transformer, mappers.size()));
+            return this;
+        }
+
+        public BuilderState append(Object obj) {
+            stringBuilder.append(obj);
+            return this;
+        }
+
+        public BuilderState append(String str) {
+            stringBuilder.append(str);
+            return this;
+        }
+
+        public BuilderState append(StringBuffer sb) {
+            stringBuilder.append(sb);
+            return this;
+        }
+
+        public BuilderState append(CharSequence s) {
+            stringBuilder.append(s);
+            return this;
+        }
+
+        public BuilderState append(CharSequence s, int start, int end) {
+            stringBuilder.append(s, start, end);
+            return this;
+        }
+
+        public BuilderState append(char[] str) {
+            stringBuilder.append(str);
+            return this;
+        }
+
+        public BuilderState append(char[] str, int offset, int len) {
+            stringBuilder.append(str, offset, len);
+            return this;
+        }
+
+        public BuilderState append(boolean b) {
+            stringBuilder.append(b);
+            return this;
+        }
+
+        public BuilderState append(char c) {
+            stringBuilder.append(c);
+            return this;
+        }
+
+        public BuilderState append(int i) {
+            stringBuilder.append(i);
+            return this;
+        }
+
+        public BuilderState append(long lng) {
+            stringBuilder.append(lng);
+            return this;
+        }
+
+        public BuilderState append(float f) {
+            stringBuilder.append(f);
+            return this;
+        }
+
+        public BuilderState append(double d) {
+            stringBuilder.append(d);
+            return this;
+        }
     }
 
-    private class NotSQLQueryBuilder<T> implements SQLQueryFilter{
+    private interface SQLQueryFilter {
+        void addQueryText(BuilderState builder);
+
+        /**
+         * @return if filters are not empty and should be used
+         */
+        boolean prepare();
+    }
+
+    private class NotSQLQueryFilter<T> implements SQLQueryFilter {
         private final SQLQueryFilters<T> subFilter;
 
-        public NotSQLQueryBuilder(T ret) {
+        public NotSQLQueryFilter(T ret) {
             subFilter = new SQLQueryFilters<T>(ret);
         }
 
-        public boolean isEmpty() {
-            return subFilter.isEmpty();
+        public boolean prepare() {
+            return subFilter.prepare();
         }
 
         public SQLQueryFilters<T> getSubFilter() {
             return subFilter;
         }
 
-        public void addQueryText(StringBuilder builder) {
+        public void addQueryText(BuilderState builder) {
             builder.append("not(");
             subFilter.addQueryText(builder);
             builder.append(')');
         }
 
-        public ParameterMapper getParameterMapper() {
-            return subFilter.getParameterMapper();
-        }
     }
 
     private class SQLQueryFilters<T> implements QueryFilters<T>, SQLQueryFilter {
@@ -189,29 +288,28 @@ public class SQLQueryBuilder implements QueryBuilder{
             this.ret = ret;
         }
 
-        public void addQueryText(StringBuilder builder) {
+        public void addQueryText(BuilderState builder) {
             boolean first = true;
             for (SQLQueryFilter filter : filters) {
-                if (!filter.isEmpty()) {
-                    if (!first) {
-                        builder.append(' ').append(operation).append(' ');
-                    }
-                    builder.append('(');
-                    filter.addQueryText(builder);
-                    builder.append(')');
-                    first = false;
+                if (!first) {
+                    builder.append(' ').append(operation).append(' ');
                 }
+                builder.append('(');
+                filter.addQueryText(builder);
+                builder.append(')');
+                first = false;
             }
             if (first)
                 throw new IllegalStateException("Can't add empty filter to " + builder);
         }
 
-        public boolean isEmpty() {
-            for (SQLQueryFilter filter : filters) {
-                if (!filter.isEmpty())
-                    return false;
+        public boolean prepare() {
+            for (Iterator<SQLQueryFilter> iterator = filters.iterator(); iterator.hasNext(); ) {
+                SQLQueryFilter filter = iterator.next();
+                if (!filter.prepare())
+                    iterator.remove();
             }
-            return true;
+            return !filters.isEmpty();
         }
 
         private <X extends SQLQueryFilter> X addFilter(X rc) {
@@ -228,7 +326,7 @@ public class SQLQueryBuilder implements QueryBuilder{
         }
 
         public QueryFilters<QueryFilters<T>> not() {
-            return addFilter(new NotSQLQueryBuilder<QueryFilters<T>>(this)).getSubFilter();
+            return addFilter(new NotSQLQueryFilter<QueryFilters<T>>(this)).getSubFilter();
         }
 
         public QueryFilters<T> ql(String textFilter) {
@@ -255,64 +353,58 @@ public class SQLQueryBuilder implements QueryBuilder{
             throw new UnsupportedOperationException();
         }
 
-        public ParameterMapper getParameterMapper() {
-            switch (filters.size()) {
-                case 0:
-                    return null;
-                case 1:
-                    return filters.get(0).getParameterMapper();
-                default:
-                    List<ParameterMapper> childrenMappers = new ArrayList<ParameterMapper>(filters.size());
-                    for (SQLQueryFilter child : filters) {
-                        ParameterMapper childMapper = child.getParameterMapper();
-                        if (childMapper != null)
-                            childrenMappers.add(childMapper);
-                    }
-                    return getParameterMapper(childrenMappers);
-            }
-        }
-
-        private ParameterMapper getParameterMapper(List<ParameterMapper> childrenMappers) {
-            switch (childrenMappers.size()) {
-                case 0:
-                    return null;
-                case 1:
-                    return childrenMappers.get(0);
-                default:
-                    return new MultiParameterMapper(childrenMappers.toArray(new ParameterMapper[childrenMappers.size()]));
-            }
-        }
     }
 
     private static abstract class SQLValue {
-        protected abstract void addValue(StringBuilder builder);
-        protected ParameterMapper getParameterMapper() {return null;}
+        protected abstract void addValue(BuilderState builder, int valueNum);
+
+        protected int getNumValues() {
+            return 1;
+        }
+
+        protected boolean providesValues(int numValues) {
+            return numValues == getNumValues();
+        }
+
+        protected void prepare() {
+        }
     }
+
     private class IdSQLValue extends SQLValue {
+        private List<Column> idColumns;
+
         @Override
-        protected void addValue(StringBuilder builder) {
-            Set<SelectExpression> idExpressions = entity.getIdColumns().keySet();
-            if (idExpressions.size() != 1)
-                throw new UnsupportedOperationException("There should be only 1 id column in " + entity + " and found " +
-                idExpressions.size());
-            idExpressions.iterator().next().appendQuery(builder, "this_");
+        protected void prepare() {
+            idColumns = toList(getFirstValue(entity.getIdColumns().values()));
         }
 
         @Override
-        protected ParameterMapper getParameterMapper() {
-            return new TransformerParameterMapper(new IdParameterTransformer(), );
+        protected int getNumValues() {
+            return idColumns.size();
         }
+
+        @Override
+        protected void addValue(BuilderState builder, int valueNum) {
+            idColumns.get(valueNum).appendQuery(builder, builder.getTablesInvolved());
+        }
+
     }
+
     private static class NullSQLValue extends SQLValue {
         private static NullSQLValue INSTANCE = new NullSQLValue();
 
         @Override
-        protected void addValue(StringBuilder builder) {
+        protected void addValue(BuilderState builder, int valueNum) {
             builder.append("null");
+        }
+
+        @Override
+        protected boolean providesValues(int numValues) {
+            return true;
         }
     }
 
-    private static class SQLValueFilter<R> implements SQLQueryFilter, ValueFilters<R>, FilterValue<R>{
+    private static class SQLValueFilter<R> implements SQLQueryFilter, ValueFilters<R>, FilterValue<R> {
         private final SQLValue leftValue;
         private final R ret;
         private String operation;
@@ -323,27 +415,24 @@ public class SQLQueryBuilder implements QueryBuilder{
             this.ret = ret;
         }
 
-        public void addQueryText(StringBuilder builder) {
-            leftValue.addValue(builder);
+        public void addQueryText(BuilderState builder) {
+            int numValues = leftValue.getNumValues();
+            if (!rightValue.providesValues(numValues))
+                throw new IllegalArgumentException("Incompatible values " + leftValue + " and " + rightValue
+                        + " provided for operation " + operation);
+            if (numValues != 1)
+                throw new IllegalArgumentException(); //TODO
+            leftValue.addValue(builder, 0);
             builder.append(operation);
-            rightValue.addValue(builder);
+            rightValue.addValue(builder, 0);
         }
 
-        @Override
-        public ParameterMapper getParameterMapper() {
-            ParameterMapper left = leftValue.getParameterMapper();
-            ParameterMapper right = rightValue.getParameterMapper();
-            if (left == null)
-                return right;
-            if (right == null)
-                return left;
-            return new MultiParameterMapper(left, right);
-        }
-
-        public boolean isEmpty() {
+        public boolean prepare() {
             if (operation == null || rightValue == null)
                 throw new IllegalStateException("Filter data was not filled for " + leftValue);
-            return false;
+            leftValue.prepare();
+            rightValue.prepare();
+            return true;
         }
 
         public FilterValue<R> eq() {

@@ -55,11 +55,11 @@ public class MutableEntityConfigurationImpl implements MutableEntityConfiguratio
         this.name = name;
         this.manager = parent.getManager();
         this.location = parent.getLocation();
-        properties = IterableUtils.toList(parent.getProperties());
+        properties = IterableUtils.copyToList(parent.getProperties());
         complexProperties = new HashMap<String, ComplexProperty>(parent.getComplexProperties());
         idColumns = new HashMap<SelectExpression, List<Column>>();
         for (Entry<SelectExpression, ? extends Iterable<Column>> e : parent.getIdColumns().entrySet()) {
-            idColumns.put(e.getKey(), IterableUtils.toList(e.getValue()));
+            idColumns.put(e.getKey(), IterableUtils.copyToList(e.getValue()));
         }
 
     }
