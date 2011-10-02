@@ -24,8 +24,7 @@ import org.esorm.entity.db.Column;
 import org.esorm.entity.db.SelectExpression;
 import org.esorm.entity.db.ValueExpression;
 import org.esorm.impl.db.ParsedFetchQuery;
-import org.esorm.impl.parameters.MultiParameterMapper;
-import org.esorm.impl.parameters.TransformerParameterMapper;
+import org.esorm.impl.parameters.*;
 import org.esorm.parameters.ParameterMapper;
 import org.esorm.parameters.ParameterTransformer;
 import org.esorm.qbuilder.FilterValue;
@@ -47,6 +46,7 @@ public class SQLQueryBuilder implements QueryBuilder {
     private final QueryRunner queryRunner;
     private EntityConfiguration entity;
     private final SQLQueryFilters filters = new SQLQueryFilters<QueryBuilder>(this);
+    private int params;
 
     public SQLQueryBuilder(QueryRunner queryRunner) {
         this.queryRunner = queryRunner;
@@ -117,7 +117,7 @@ public class SQLQueryBuilder implements QueryBuilder {
                 //TODO add .hasNext check
             }
         }
-        if (!filters.prepare()) {
+        if (filters.prepare()) {
             query.append(" where ");
             filters.addQueryText(builderState);
         }
@@ -158,7 +158,7 @@ public class SQLQueryBuilder implements QueryBuilder {
         private ParameterMapper getParameterMapper() {
             switch (mappers.size()) {
                 case 0:
-                    return null;
+                    return NoParameterMapper.INSTANCE;
                 case 1:
                     return mappers.get(0);
                 default:
@@ -168,12 +168,16 @@ public class SQLQueryBuilder implements QueryBuilder {
 
         public BuilderState appendParameter(ParameterMapper mapper) {
             mappers.add(mapper);
+            stringBuilder.append('?');
             return this;
         }
 
         public BuilderState appendParameter(ParameterTransformer transformer) {
-            mappers.add(new TransformerParameterMapper(transformer, mappers.size()));
-            return this;
+            return appendParameter(new TransformerParameterMapper(transformer, mappers.size()));
+        }
+
+        public int getNextParameterNumber() {
+            return mappers.size();
         }
 
         public BuilderState append(Object obj) {
@@ -342,7 +346,7 @@ public class SQLQueryBuilder implements QueryBuilder {
         }
 
         public ValueFilters<QueryFilters<T>> id() {
-            return addFilter(new SQLValueFilter<QueryFilters<T>>(this, new IdSQLValue()));
+            return addFilter(new SQLValueFilter<QueryFilters<T>>(this, new IdColumnsSQLValue()));
         }
 
         public ValueFilters<QueryFilters<T>> query(ParsedQuery query) {
@@ -370,7 +374,7 @@ public class SQLQueryBuilder implements QueryBuilder {
         }
     }
 
-    private class IdSQLValue extends SQLValue {
+    private class IdColumnsSQLValue extends SQLValue {
         private List<Column> idColumns;
 
         @Override
@@ -404,7 +408,34 @@ public class SQLQueryBuilder implements QueryBuilder {
         }
     }
 
-    private static class SQLValueFilter<R> implements SQLQueryFilter, ValueFilters<R>, FilterValue<R> {
+    private static class ObjectSQLValue extends SQLValue {
+        private final Object value;
+
+        public ObjectSQLValue(Object value) {
+            this.value = value;
+        }
+
+        @Override
+        protected void addValue(BuilderState builder, int valueNum) {
+            builder.appendParameter(new FixedValueParameterMapper(builder.getNextParameterNumber(), value));
+        }
+    }
+
+    private static class PositionalParamSQLValue extends SQLValue {
+        private final int paramNum;
+
+        public PositionalParamSQLValue(int paramNum) {
+            this.paramNum = paramNum;
+        }
+
+        @Override
+        protected void addValue(BuilderState builder, int valueNum) {
+            builder.appendParameter(new TransformerParameterMapper(NopParameterTransformer.INSTANCE, paramNum,
+                    builder.getNextParameterNumber()));
+        }
+    }
+
+    private class SQLValueFilter<R> implements SQLQueryFilter, ValueFilters<R>, FilterValue<R> {
         private final SQLValue leftValue;
         private final R ret;
         private String operation;
@@ -461,7 +492,26 @@ public class SQLQueryBuilder implements QueryBuilder {
         }
 
         public R value(Object value) {
-            throw new UnsupportedOperationException();
+            if (value == null) {
+                if ("=".equals(operation)) {
+                    setRightValue(NullSQLValue.INSTANCE);
+                    operation = " is ";
+                    return ret;
+                }
+                throw new IllegalArgumentException("Only equal operation for null value is supported");
+            }
+            return setRightValue(new ObjectSQLValue(value));
+        }
+
+        @Override
+        public R param(int number) {
+            params = Math.max(params, number + 1);
+            return setRightValue(new PositionalParamSQLValue(number));
+        }
+
+        @Override
+        public R param() {
+            return param(params);
         }
 
         public R param(String name) {
@@ -486,6 +536,13 @@ public class SQLQueryBuilder implements QueryBuilder {
             if (this.operation != null)
                 throw new IllegalStateException("You must not call operation method multiple times");
             this.operation = operation;
+        }
+
+        private R setRightValue(SQLValue value) {
+            if (rightValue != null)
+                throw new IllegalStateException("Right value is already set");
+            rightValue = value;
+            return ret;
         }
     }
 }

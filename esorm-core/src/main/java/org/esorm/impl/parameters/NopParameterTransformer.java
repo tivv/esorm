@@ -24,6 +24,8 @@ import org.esorm.parameters.ParameterTransformer;
  * @author Vitalii Tymchyshyn
  */
 public class NopParameterTransformer<T> implements ParameterTransformer<T, T> {
+    public static final NopParameterTransformer INSTANCE = new NopParameterTransformer();
+
     public T transform(T parameter) {
         return parameter;
     }

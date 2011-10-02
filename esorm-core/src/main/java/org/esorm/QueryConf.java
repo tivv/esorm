@@ -83,7 +83,7 @@ public class QueryConf implements QueryRunner {
     }
 
     public <T> ConnectionProvider<T> getConnectionProvider(Class<T> connectionClass) {
-        for (ConnectionProvider provider: getConnectionProvidersIterable()) {
+        for (ConnectionProvider provider : getConnectionProvidersIterable()) {
             if (connectionClass.isAssignableFrom(provider.getConnectionClass()))
                 return provider;
         }
@@ -98,7 +98,7 @@ public class QueryConf implements QueryRunner {
     }
 
     public Iterable<ConnectionProvider> getConnectionProvidersIterable() {
-        if (connectionProviders == null){
+        if (connectionProviders == null) {
             return parent.getConnectionProvidersIterable();
         } else {
             if (connectionProvidersIterable == null) {
@@ -215,7 +215,7 @@ public class QueryConf implements QueryRunner {
     }
 
     public <T> T get(EntityConfiguration configuration, Object id) {
-        return getDataAccessor().<T>get(this, Queries.byId(configuration), id);
+        return getDataAccessor().<T>get(this, Queries.byId(this, configuration), id);
     }
 
     public <T> void delete(T value) {

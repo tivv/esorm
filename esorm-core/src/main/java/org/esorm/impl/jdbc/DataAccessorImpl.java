@@ -23,8 +23,6 @@ import org.esorm.qbuilder.QueryBuilder;
 
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.Arrays;
-import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -95,7 +93,7 @@ public class DataAccessorImpl implements DataAccessor {
             PreparedQuery<R> preparedQuery = null;
             QueryIterator<R> rs = null;
             try {
-                preparedQuery = query.prepare(con, parseId(params));
+                preparedQuery = query.prepare(con, params);
                 rs = preparedQuery.iterator();
                 if (!rs.hasNext())
                     return null;
@@ -119,15 +117,6 @@ public class DataAccessorImpl implements DataAccessor {
                     }
                 }
             }
-        }
-
-        /**
-         * @param id
-         * @return
-         */
-        private List<Object> parseId(Object... id) {
-            // TODO Multi-column ids
-            return Arrays.asList(id);
         }
     }
 }

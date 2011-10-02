@@ -16,19 +16,17 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with EsORM.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.esorm.impl.parameters;
-
-import org.esorm.parameters.ParameterMapper;
-import org.esorm.parameters.ParameterSetter;
+package org.esorm.utils;
 
 /**
  * @author Vitalii Tymchyshyn
  */
-public class NoParameterMapper implements ParameterMapper {
-    public static final NoParameterMapper INSTANCE = new NoParameterMapper();
+public final class AssertUtils {
+    private AssertUtils() {
+    }
 
-    public void process(ParameterSetter setter, Object... inputValues) {
-        if (inputValues.length != 0)
-            throw new IllegalStateException("The query takes no parameters and " + inputValues.length + " are provided");
+    public static void argNotNull(Object value, String message) {
+        if (value == null)
+            throw new IllegalArgumentException(message);
     }
 }

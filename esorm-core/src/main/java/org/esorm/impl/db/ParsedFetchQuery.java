@@ -29,6 +29,8 @@ import java.sql.Connection;
 import java.util.List;
 import java.util.Map;
 
+import static org.esorm.utils.AssertUtils.argNotNull;
+
 /**
  * @author Vitalii Tymchyshyn
  */
@@ -44,6 +46,7 @@ public class ParsedFetchQuery implements ParsedQuery {
     }
 
     public ParsedFetchQuery(EntityConfiguration configuration, String query, ParameterMapper parameterMapper, Map<ValueExpression, Integer> resultColumns, List<String> parameterIndexes) {
+        argNotNull(parameterMapper, "Parameter mapper must not be null");
         this.configuration = configuration;
         this.query = query;
         this.resultColumns = resultColumns;

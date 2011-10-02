@@ -25,7 +25,14 @@ import org.esorm.ParsedQuery;
  */
 public interface FilterValue<RET> {
     RET value(Object value);
+
     RET param(String name);
+
+    RET param(int number);
+
+    RET param();
+
     RET query(ParsedQuery subQuery);
+
     RET expression(String expression);
 }

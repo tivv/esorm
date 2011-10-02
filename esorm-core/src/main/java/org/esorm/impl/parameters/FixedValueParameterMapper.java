@@ -24,11 +24,17 @@ import org.esorm.parameters.ParameterSetter;
 /**
  * @author Vitalii Tymchyshyn
  */
-public class NoParameterMapper implements ParameterMapper {
-    public static final NoParameterMapper INSTANCE = new NoParameterMapper();
+public class FixedValueParameterMapper implements ParameterMapper {
+    private final int parameterNumber;
+    private final Object value;
 
+    public FixedValueParameterMapper(int parameterNumber, Object value) {
+        this.parameterNumber = parameterNumber;
+        this.value = value;
+    }
+
+    @Override
     public void process(ParameterSetter setter, Object... inputValues) {
-        if (inputValues.length != 0)
-            throw new IllegalStateException("The query takes no parameters and " + inputValues.length + " are provided");
+        setter.setParameter(parameterNumber, value);
     }
 }

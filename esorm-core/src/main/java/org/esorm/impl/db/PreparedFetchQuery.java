@@ -35,6 +35,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import static org.esorm.utils.AssertUtils.argNotNull;
+
 /**
  * @author Vitalii Tymchyshyn
  */
@@ -49,6 +51,7 @@ public class PreparedFetchQuery<R> implements PreparedQuery<R> {
     private PreparedStatement statement;
 
     public PreparedFetchQuery(Connection con, QueryCache queryCache, EntityConfiguration configuration, String query, ParameterMapper parameterMapper, Map<ValueExpression, Integer> resultColumns, List<String> parameterIndexes) {
+        argNotNull(parameterMapper, "Parameter mapper must not be null");
         this.con = con;
         this.queryCache = queryCache;
         this.query = query;
