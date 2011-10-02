@@ -135,8 +135,22 @@ public class DefaultQueryConf
                 clazz.getAnnotation(FirstIsDefault.class) != null ? clazz.getEnumConstants()[0] : null;
     }
 
+    @Override
+    public <T> T get(Enum key, T defaultValue) {
+        if (defaultValue == null) {
+            try {
+                key.getClass().getField("def").get(key);
+            } catch (NoSuchFieldException e) {
+                return null;
+            } catch (IllegalAccessException e) {
+                throw new RegisteredExceptionWrapper(e);
+            }
+        }
+        return defaultValue;
+    }
+
     public <T> T get(Enum key) {
-        return null;
+        return get(key, null);
     }
 
     public EntityConfiguration getConfiguration(String name, String configurationLocation, String managerLocation) {
@@ -161,8 +175,7 @@ public class DefaultQueryConf
         Enumeration<URL> resourceList;
         try {
             resourceList = clazz.getClassLoader().getResources("META-INF/services/" + clazz.getName() + ".properties");
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             throw new RegisteredExceptionWrapper("Could not load resources for " + clazz, e);
         }
         while (resourceList.hasMoreElements()) {
@@ -170,16 +183,14 @@ public class DefaultQueryConf
             Properties properties = new Properties();
             try {
                 properties.load(resource.openStream());
-            }
-            catch (IOException e) {
+            } catch (IOException e) {
                 LOG.log(Level.WARNING, "Could not load service list for " + clazz + " from " + resource, e);
             }
             for (Entry<Object, Object> e : properties.entrySet()) {
                 T service;
                 try {
                     service = (T) Class.forName(e.getKey().toString()).newInstance();
-                }
-                catch (Exception ex) {
+                } catch (Exception ex) {
                     LOG.log(Level.WARNING, "Service " + e.getKey() + " defined in " + resource +
                             " could not be loaded and was skipped", ex);
                     continue;

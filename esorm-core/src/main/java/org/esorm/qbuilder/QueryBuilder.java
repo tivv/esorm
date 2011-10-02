@@ -20,7 +20,6 @@ package org.esorm.qbuilder;
 
 import org.esorm.EntityConfiguration;
 import org.esorm.ParsedQuery;
-import org.esorm.PreparedQuery;
 import org.esorm.QueryIterator;
 
 import java.util.Map;
@@ -29,18 +28,27 @@ import java.util.Map;
  * @author Vitalii Tymchyshyn
  */
 public interface QueryBuilder {
+    public enum Config {
+        MaxParamBlockSize {public int def = 256;}
+    }
+
     /**
      * Specify what entities to select
+     *
      * @return
      */
     QueryBuilder select(EntityConfiguration configuration);
 
     /**
      * Specify filtering criteria
+     *
      * @return
      */
     QueryFilters<QueryBuilder> filter();
+
     ParsedQuery build();
+
     <R> QueryIterator<R> iterator();
+
     <R> QueryIterator<R> iterator(Map<String, Object> params);
 }

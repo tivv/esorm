@@ -18,21 +18,9 @@
  */
 package org.esorm.qbuilder;
 
-import org.esorm.ParsedQuery;
-
 /**
  * @author Vitalii Tymchyshyn
  */
-public interface FilterValue<RET> {
+public interface FilterValue<RET> extends BasicFilterValue<RET> {
     RET value(Object value);
-
-    RET param(String name);
-
-    RET param(int number);
-
-    RET param();
-
-    RET query(ParsedQuery subQuery);
-
-    RET expression(String expression);
 }

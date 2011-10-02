@@ -16,30 +16,18 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with EsORM.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.esorm.impl;
+package org.esorm.qbuilder;
 
-import org.esorm.PreparedQuery;
-import org.esorm.QueryRunner;
-import org.esorm.qbuilder.QueryBuilder;
-
-import java.sql.Connection;
-import java.util.Map;
+import java.util.Collection;
 
 /**
  * @author Vitalii Tymchyshyn
  */
-public abstract class AQueryBuilder implements QueryBuilder{
-    private final QueryRunner runner;
+public interface FilterValues<RET> extends BasicFilterValue<RET> {
+    RET values(Object... values);
 
-    public AQueryBuilder(QueryRunner runner) {
-        this.runner = runner;
-    }
+    RET values(Collection values);
 
-    public <R> PreparedQuery<R> prepare() {
-        return build().prepare(runner.getConnectionProvider(Connection.class).takeConnection());
-    }
+    RET values(int blockSize, Iterable values);
 
-    public <R> PreparedQuery<R> prepare(Map<String, Object> params) {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
-    }
 }

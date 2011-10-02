@@ -379,9 +379,14 @@ public class QueryConf implements QueryRunner {
         return rc == null ? parent.getSelected(clazz) : rc;
     }
 
-    public <T> T get(Enum key) {
+    @Override
+    public <T> T get(Enum key, T defaultValue) {
         T rc = settings == null ? null : (T) settings.get(key);
-        return rc == null ? parent.<T>get(key) : rc;
+        return rc == null ? parent.<T>get(key, defaultValue) : rc;
+    }
+
+    public <T> T get(Enum key) {
+        return get(key, null);
     }
 
 

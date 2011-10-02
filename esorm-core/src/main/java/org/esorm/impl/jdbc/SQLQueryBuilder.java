@@ -27,10 +27,7 @@ import org.esorm.impl.db.ParsedFetchQuery;
 import org.esorm.impl.parameters.*;
 import org.esorm.parameters.ParameterMapper;
 import org.esorm.parameters.ParameterTransformer;
-import org.esorm.qbuilder.FilterValue;
-import org.esorm.qbuilder.QueryBuilder;
-import org.esorm.qbuilder.QueryFilters;
-import org.esorm.qbuilder.ValueFilters;
+import org.esorm.qbuilder.*;
 
 import java.sql.Connection;
 import java.util.*;
@@ -366,6 +363,10 @@ public class SQLQueryBuilder implements QueryBuilder {
             return 1;
         }
 
+        protected int getNumRows() {
+            return 1;
+        }
+
         protected boolean providesValues(int numValues) {
             return numValues == getNumValues();
         }
@@ -435,10 +436,11 @@ public class SQLQueryBuilder implements QueryBuilder {
         }
     }
 
-    private class SQLValueFilter<R> implements SQLQueryFilter, ValueFilters<R>, FilterValue<R> {
+    private class SQLValueFilter<R> implements SQLQueryFilter, ValueFilters<R>, FilterValue<R>, FilterValues<R> {
         private final SQLValue leftValue;
         private final R ret;
         private String operation;
+        private boolean multiRightValue;
         private SQLValue rightValue;
 
         public SQLValueFilter(R ret, SQLValue leftValue) {
@@ -491,6 +493,13 @@ public class SQLQueryBuilder implements QueryBuilder {
             return this;
         }
 
+        @Override
+        public FilterValues<R> in() {
+            setOperation(" in ");
+            multiRightValue = true;
+            return this;
+        }
+
         public R value(Object value) {
             if (value == null) {
                 if ("=".equals(operation)) {
@@ -501,6 +510,22 @@ public class SQLQueryBuilder implements QueryBuilder {
                 throw new IllegalArgumentException("Only equal operation for null value is supported");
             }
             return setRightValue(new ObjectSQLValue(value));
+        }
+
+        @Override
+        public R values(Object... values) {
+            return values(Arrays.asList(values));
+        }
+
+        @Override
+        public R values(Collection values) {
+            return values(values.size(), values);
+        }
+
+        @Override
+        public R values(int blockSize, Iterable values) {
+            blockSize = Math.min(blockSize, queryRunner.<Integer>get(Config.MaxParamBlockSize));
+            throw new UnsupportedOperationException();
         }
 
         @Override

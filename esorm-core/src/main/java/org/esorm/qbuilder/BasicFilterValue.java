@@ -18,23 +18,19 @@
  */
 package org.esorm.qbuilder;
 
+import org.esorm.ParsedQuery;
+
 /**
  * @author Vitalii Tymchyshyn
  */
-public interface ValueFilters<RET> {
-    FilterValue<RET> eq();
+public interface BasicFilterValue<RET> {
+    RET param(String name);
 
-    FilterValue<RET> gt();
+    RET param(int number);
 
-    FilterValue<RET> lt();
+    RET param();
 
-    FilterValue<RET> ge();
+    RET query(ParsedQuery subQuery);
 
-    FilterValue<RET> le();
-
-    FilterValues<RET> in();
-
-    RET isNull();
-
-
+    RET expression(String expression);
 }
