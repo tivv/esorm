@@ -128,7 +128,7 @@ public class SQLQueryBuilder implements QueryBuilder {
     public <R> QueryIterator<R> iterator() {
         return EsormUtils.perform(queryRunner, Connection.class, new EsormUtils.PerformRunner<QueryIterator<R>, Connection>() {
             public QueryIterator<R> perform(QueryRunner queryRunner, Connection connection) {
-                return build().<R>prepare(connection).iterator();
+                return build().<R>prepare(connection).iterator().autoCloseQuery(true);
             }
         });
     }
@@ -136,7 +136,7 @@ public class SQLQueryBuilder implements QueryBuilder {
     public <R> QueryIterator<R> iterator(final Map<String, Object> params) {
         return EsormUtils.perform(queryRunner, Connection.class, new EsormUtils.PerformRunner<QueryIterator<R>, Connection>() {
             public QueryIterator<R> perform(QueryRunner queryRunner, Connection connection) {
-                return build().<R>prepare(connection).iterator(params);
+                return build().<R>prepare(connection).iterator(params).autoCloseQuery(true);
             }
         });
     }

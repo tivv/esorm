@@ -215,7 +215,7 @@ public class QueryConf implements QueryRunner {
     }
 
     public <T> T get(EntityConfiguration configuration, Object id) {
-        return getDataAccessor().<T>get(this, Queries.byId(this, configuration), id);
+        return getDataAccessor().<T>getOne(this, Queries.byId(this, configuration), id);
     }
 
     public <T> void delete(T value) {

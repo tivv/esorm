@@ -27,4 +27,8 @@ import java.util.Iterator;
  */
 public interface QueryIterator<E> extends Iterator<E>, Closeable {
     void clearEntityCache();
+
+    void setAutoCloseQuery(boolean autoCloseQuery);
+
+    QueryIterator<E> autoCloseQuery(boolean autoCloseQuery);
 }

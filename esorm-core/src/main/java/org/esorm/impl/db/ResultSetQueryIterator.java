@@ -39,10 +39,13 @@ public class ResultSetQueryIterator<E> implements QueryIterator<E> {
     private final EntityConfiguration configuration;
     private final ResultSet resultSet;
     private final Map<ValueExpression, Integer> resultColumns;
+    private PreparedFetchQuery<E> fetchQuery;
     private final QueryCache queryCache;
     private boolean closed;
+    private boolean autoCloseQuery;
 
-    public ResultSetQueryIterator(QueryCache queryCache, EntityConfiguration configuration, ResultSet resultSet, Map<ValueExpression, Integer> resultColumns) {
+    public ResultSetQueryIterator(PreparedFetchQuery<E> fetchQuery, QueryCache queryCache, EntityConfiguration configuration, ResultSet resultSet, Map<ValueExpression, Integer> resultColumns) {
+        this.fetchQuery = fetchQuery;
         this.queryCache = queryCache;
         this.configuration = configuration;
         this.resultSet = resultSet;
@@ -102,6 +105,8 @@ public class ResultSetQueryIterator<E> implements QueryIterator<E> {
                 return;
             closed = true;
             resultSet.close();
+            if (autoCloseQuery)
+                fetchQuery.close();
         } catch (SQLException e) {
             throw new RegisteredExceptionWrapper(e);
         }
@@ -110,4 +115,16 @@ public class ResultSetQueryIterator<E> implements QueryIterator<E> {
     public void clearEntityCache() {
         queryCache.clear();
     }
+
+    @Override
+    public void setAutoCloseQuery(boolean autoCloseQuery) {
+        this.autoCloseQuery = autoCloseQuery;
+    }
+
+    @Override
+    public ResultSetQueryIterator<E> autoCloseQuery(boolean autoCloseQuery) {
+        setAutoCloseQuery(autoCloseQuery);
+        return this;
+    }
+
 }

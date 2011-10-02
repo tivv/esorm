@@ -40,12 +40,12 @@ public class DataAccessorImpl implements DataAccessor {
     }
 
     /* (non-Javadoc)
-     * @see org.esorm.DataAccessor#get(org.esorm.QueryRunner, org.esorm.EntityDescription, java.lang.Object)
+     * @see org.esorm.DataAccessor#getOne(org.esorm.QueryRunner, org.esorm.EntityDescription, java.lang.Object)
      */
 
     @SuppressWarnings("unchecked")
-    public <T> T get(QueryRunner queryRunner, ParsedQuery query,
-                     Object... params) {
+    public <T> T getOne(QueryRunner queryRunner, ParsedQuery query,
+                        Object... params) {
         if (query.getType() != ParsedQuery.Type.Fetch)
             throw new IllegalArgumentException("Fetch query expected");
         return (T) run(GET_WORKER, queryRunner, query, params);

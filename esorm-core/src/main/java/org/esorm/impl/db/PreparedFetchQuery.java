@@ -79,7 +79,7 @@ public class PreparedFetchQuery<R> implements PreparedQuery<R> {
 
     public QueryIterator<R> iterator() {
         try {
-            return new ResultSetQueryIterator<R>(queryCache, configuration, statement.executeQuery(), resultColumns);
+            return new ResultSetQueryIterator<R>(this, queryCache, configuration, statement.executeQuery(), resultColumns);
         } catch (SQLException e) {
             throw new RegisteredExceptionWrapper(e);
         }

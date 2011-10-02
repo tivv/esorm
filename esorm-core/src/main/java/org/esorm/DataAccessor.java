@@ -29,7 +29,7 @@ public interface DataAccessor {
      * @param query
      * @param params @return
      */
-    <T> T get(QueryRunner queryRunner, ParsedQuery query, Object... params);
+    <T> T getOne(QueryRunner queryRunner, ParsedQuery query, Object... params);
 
     QueryBuilder buildQuery(QueryRunner queryRunner);
 }
