@@ -41,7 +41,8 @@ public class TransformerParameterMapper implements ParameterMapper {
     }
 
     @SuppressWarnings({"unchecked"})
-    public void process(ParameterSetter setter, Object... inputValues) {
+    public Object process(Object multiCallState, ParameterSetter setter, Object... inputValues) {
         setter.setParameter(outputNumber, transformer.transform(inputValues[inputNumber]));
+        return null;
     }
 }

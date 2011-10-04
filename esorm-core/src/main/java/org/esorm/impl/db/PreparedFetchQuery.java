@@ -24,6 +24,7 @@ import org.esorm.QueryIterator;
 import org.esorm.RegisteredExceptionWrapper;
 import org.esorm.entity.db.SelectExpression;
 import org.esorm.entity.db.ValueExpression;
+import org.esorm.impl.AQueryIterator;
 import org.esorm.impl.QueryCache;
 import org.esorm.impl.parameters.PreparedStatementParameterSetter;
 import org.esorm.parameters.ParameterMapper;
@@ -34,6 +35,7 @@ import java.sql.SQLException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 
 import static org.esorm.utils.AssertUtils.argNotNull;
 
@@ -49,6 +51,7 @@ public class PreparedFetchQuery<R> implements PreparedQuery<R> {
     private final List<String> parameterIndexes;
     private final QueryCache queryCache;
     private PreparedStatement statement;
+    private Object[] params;
 
     public PreparedFetchQuery(Connection con, QueryCache queryCache, EntityConfiguration configuration, String query, ParameterMapper parameterMapper, Map<ValueExpression, Integer> resultColumns, List<String> parameterIndexes) {
         argNotNull(parameterMapper, "Parameter mapper must not be null");
@@ -77,12 +80,18 @@ public class PreparedFetchQuery<R> implements PreparedQuery<R> {
         return configuration;
     }
 
-    public QueryIterator<R> iterator() {
+    public synchronized QueryIterator<R> iterator() {
         try {
-            return new ResultSetQueryIterator<R>(this, queryCache, configuration, statement.executeQuery(), resultColumns);
+            Object callState = parameterMapper.process(null, new PreparedStatementParameterSetter(statement), params);
+            ResultSetQueryIterator<R> firstCallIterator = makeNewIterator();
+            return callState == null ? firstCallIterator : new MultiCallIterator(callState, firstCallIterator, params);
         } catch (SQLException e) {
             throw new RegisteredExceptionWrapper(e);
         }
+    }
+
+    private ResultSetQueryIterator<R> makeNewIterator() throws SQLException {
+        return new ResultSetQueryIterator<R>(this, queryCache, configuration, statement.executeQuery(), resultColumns);
     }
 
     public QueryIterator<R> iterator(Object... params) {
@@ -101,7 +110,7 @@ public class PreparedFetchQuery<R> implements PreparedQuery<R> {
                 throw new RegisteredExceptionWrapper(e);
             }
         }
-        parameterMapper.process(new PreparedStatementParameterSetter(statement), params);
+        this.params = params;
         return this;
     }
 
@@ -126,6 +135,71 @@ public class PreparedFetchQuery<R> implements PreparedQuery<R> {
             statement.close();
         } catch (SQLException e) {
             throw new RegisteredExceptionWrapper(e);
+        }
+    }
+
+    private class MultiCallIterator extends AQueryIterator<R> {
+        private Object callState;
+        private QueryIterator<R> delegate;
+        private Object[] params;
+
+        public MultiCallIterator(Object callState, ResultSetQueryIterator<R> firstCallIterator, Object[] params) {
+            this.callState = callState;
+            this.delegate = firstCallIterator;
+            this.params = params;
+        }
+
+        @Override
+        public void clearEntityCache() {
+            queryCache.clear();
+        }
+
+        @Override
+        public boolean hasNext() {
+            if (delegate == null)
+                return false;
+            while (!delegate.hasNext()) {
+                delegate.close();
+                delegate = null;
+                if (callState == null)
+                    return false;
+                makeNewDelegate();
+            }
+            return true;
+        }
+
+        private void makeNewDelegate() {
+            synchronized (PreparedFetchQuery.this) {
+                callState = parameterMapper.process(callState, new PreparedStatementParameterSetter(statement), params);
+                try {
+                    delegate = makeNewIterator();
+                } catch (SQLException e) {
+                    throw new RegisteredExceptionWrapper(e);
+                }
+            }
+        }
+
+        @Override
+        public R next() {
+            if (!hasNext())
+                throw new NoSuchElementException();
+            return delegate.next();
+        }
+
+        @Override
+        public void remove() {
+            //TODO - correctly process during delegate switch
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void close() {
+            if (delegate != null) {
+                delegate.close();
+                delegate = null;
+            }
+            if (autoCloseQuery)
+                PreparedFetchQuery.this.close();
         }
     }
 }

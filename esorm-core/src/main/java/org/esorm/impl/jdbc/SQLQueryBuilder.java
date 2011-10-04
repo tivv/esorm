@@ -422,6 +422,14 @@ public class SQLQueryBuilder implements QueryBuilder {
         }
     }
 
+    private static class ObjectListSQLValue extends SQLValue {
+
+        @Override
+        protected void addValue(BuilderState builder, int valueNum) {
+            //To change body of implemented methods use File | Settings | File Templates.
+        }
+    }
+
     private static class PositionalParamSQLValue extends SQLValue {
         private final int paramNum;
 

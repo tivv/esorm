@@ -24,16 +24,46 @@ import org.esorm.parameters.ParameterSetter;
 /**
  * @author Vitalii Tymchyshyn
  */
-public class MultiParameterMapper implements ParameterMapper {
+public class MultiParameterMapper implements ParameterMapper<MultiParameterMapper.StateSelector> {
     private final ParameterMapper[] children;
 
     public MultiParameterMapper(ParameterMapper... children) {
         this.children = children;
     }
 
-    public void process(ParameterSetter setter, Object... inputValues) {
-        for (ParameterMapper child : children) {
-            child.process(setter, inputValues);
+    public StateSelector process(StateSelector multiCallState, ParameterSetter setter, Object... inputValues) {
+        StateSelector rc = null;
+        for (int i = 0, childrenLength = children.length; i < childrenLength; i++) {
+            Object state = children[i].process(multiCallState == null ? null : multiCallState.getChildState(i),
+                    setter, inputValues);
+            if (state != null) {
+                if (rc != null)
+                    throw new IllegalStateException("Two parameter mappers require multiple calls");
+                rc = new StateSelector(i, state);
+            }
+        }
+        return rc;
+    }
+
+    public static class StateSelector {
+        private final int childWithState;
+        private final Object childState;
+
+        private StateSelector(int childWithState, Object childState) {
+            this.childWithState = childWithState;
+            this.childState = childState;
+        }
+
+        public int getChildWithState() {
+            return childWithState;
+        }
+
+        public Object getChildState() {
+            return childState;
+        }
+
+        private Object getChildState(int i) {
+            return i == getChildWithState() ? getChildState() : null;
         }
     }
 }

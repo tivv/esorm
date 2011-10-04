@@ -16,20 +16,24 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with EsORM.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.esorm.impl.parameters;
+package org.esorm.impl;
 
-import org.esorm.parameters.ParameterMapper;
-import org.esorm.parameters.ParameterSetter;
+import org.esorm.QueryIterator;
 
 /**
  * @author Vitalii Tymchyshyn
  */
-public class NoParameterMapper implements ParameterMapper {
-    public static final NoParameterMapper INSTANCE = new NoParameterMapper();
+public abstract class AQueryIterator<E> implements QueryIterator<E> {
+    protected boolean autoCloseQuery;
 
-    public Object process(Object multiCallState, ParameterSetter setter, Object... inputValues) {
-        if (inputValues.length != 0)
-            throw new IllegalStateException("The query takes no parameters and " + inputValues.length + " are provided");
-        return null;
+    @Override
+    public void setAutoCloseQuery(boolean autoCloseQuery) {
+        this.autoCloseQuery = autoCloseQuery;
+    }
+
+    @Override
+    public AQueryIterator<E> autoCloseQuery(boolean autoCloseQuery) {
+        setAutoCloseQuery(autoCloseQuery);
+        return this;
     }
 }

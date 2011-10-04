@@ -25,9 +25,10 @@ import org.esorm.parameters.ParameterSetter;
  * @author Vitalii Tymchyshyn
  */
 public class DirectParameterMapper implements ParameterMapper {
-    public void process(ParameterSetter setter, Object... inputValues) {
+    public Object process(Object multiCallState, ParameterSetter setter, Object... inputValues) {
         for (int i = 0, inputValuesLength = inputValues.length; i < inputValuesLength; i++) {
             setter.setParameter(i, inputValues[i]);
         }
+        return null;
     }
 }

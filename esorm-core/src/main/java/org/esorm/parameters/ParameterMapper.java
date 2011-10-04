@@ -21,6 +21,9 @@ package org.esorm.parameters;
 /**
  * @author Vitalii Tymchyshyn
  */
-public interface ParameterMapper {
-    void process(ParameterSetter setter, Object... inputValues);
+public interface ParameterMapper<S> {
+    /**
+     *
+     */
+    S process(S multiCallState, ParameterSetter setter, Object... inputValues);
 }

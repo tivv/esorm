@@ -20,10 +20,10 @@ package org.esorm.impl.db;
 
 import org.esorm.EntityBuilder;
 import org.esorm.EntityConfiguration;
-import org.esorm.QueryIterator;
 import org.esorm.RegisteredExceptionWrapper;
 import org.esorm.entity.EntityProperty;
 import org.esorm.entity.db.ValueExpression;
+import org.esorm.impl.AQueryIterator;
 import org.esorm.impl.QueryCache;
 
 import java.sql.ResultSet;
@@ -35,14 +35,13 @@ import java.util.NoSuchElementException;
 /**
  * @author Vitalii Tymchyshyn
  */
-public class ResultSetQueryIterator<E> implements QueryIterator<E> {
+public class ResultSetQueryIterator<E> extends AQueryIterator<E> {
     private final EntityConfiguration configuration;
     private final ResultSet resultSet;
     private final Map<ValueExpression, Integer> resultColumns;
     private PreparedFetchQuery<E> fetchQuery;
     private final QueryCache queryCache;
     private boolean closed;
-    private boolean autoCloseQuery;
 
     public ResultSetQueryIterator(PreparedFetchQuery<E> fetchQuery, QueryCache queryCache, EntityConfiguration configuration, ResultSet resultSet, Map<ValueExpression, Integer> resultColumns) {
         this.fetchQuery = fetchQuery;
@@ -114,17 +113,6 @@ public class ResultSetQueryIterator<E> implements QueryIterator<E> {
 
     public void clearEntityCache() {
         queryCache.clear();
-    }
-
-    @Override
-    public void setAutoCloseQuery(boolean autoCloseQuery) {
-        this.autoCloseQuery = autoCloseQuery;
-    }
-
-    @Override
-    public ResultSetQueryIterator<E> autoCloseQuery(boolean autoCloseQuery) {
-        setAutoCloseQuery(autoCloseQuery);
-        return this;
     }
 
 }

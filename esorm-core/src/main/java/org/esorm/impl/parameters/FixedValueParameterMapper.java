@@ -34,7 +34,8 @@ public class FixedValueParameterMapper implements ParameterMapper {
     }
 
     @Override
-    public void process(ParameterSetter setter, Object... inputValues) {
+    public Object process(Object multiCallState, ParameterSetter setter, Object... inputValues) {
         setter.setParameter(parameterNumber, value);
+        return null;
     }
 }
