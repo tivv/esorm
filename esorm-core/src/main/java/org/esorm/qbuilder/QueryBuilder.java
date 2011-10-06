@@ -21,15 +21,17 @@ package org.esorm.qbuilder;
 import org.esorm.EntityConfiguration;
 import org.esorm.ParsedQuery;
 import org.esorm.QueryIterator;
+import org.esorm.ann.Default;
 
 import java.util.Map;
 
 /**
  * @author Vitalii Tymchyshyn
  */
-public interface QueryBuilder {
+public interface QueryBuilder<R> extends Iterable<R> {
     public enum Config {
-        MaxParamBlockSize {public int def = 256;}
+        @Default("256")
+        MaxParamBlockSize
     }
 
     /**
@@ -37,18 +39,18 @@ public interface QueryBuilder {
      *
      * @return
      */
-    QueryBuilder select(EntityConfiguration configuration);
+    QueryBuilder<R> select(EntityConfiguration configuration);
 
     /**
      * Specify filtering criteria
      *
      * @return
      */
-    QueryFilters<QueryBuilder> filter();
+    QueryFilters<QueryBuilder<R>> filter();
 
     ParsedQuery build();
 
-    <R> QueryIterator<R> iterator();
+    QueryIterator<R> iterator();
 
-    <R> QueryIterator<R> iterator(Map<String, Object> params);
+    QueryIterator<R> iterator(Map<String, Object> params);
 }

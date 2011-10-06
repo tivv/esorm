@@ -215,7 +215,7 @@ public class QueryConf implements QueryRunner {
     }
 
     public <T> T get(EntityConfiguration configuration, Object id) {
-        return getDataAccessor().<T>getOne(this, Queries.byId(this, configuration), id);
+        return getDataAccessor().<T>getOne(this, Queries.byId(this, configuration).build(), id);
     }
 
     public <T> void delete(T value) {
@@ -352,7 +352,7 @@ public class QueryConf implements QueryRunner {
         return getConfiguration(configurationClass.getSimpleName(), configurationClass.getName(), null);
     }
 
-    public QueryBuilder buildQuery() {
+    public <T> QueryBuilder<T> buildQuery() {
         return getDataAccessor().buildQuery(this);
     }
 
@@ -380,13 +380,18 @@ public class QueryConf implements QueryRunner {
     }
 
     @Override
-    public <T> T get(Enum key, T defaultValue) {
+    public <T> T get(Enum key, Class<T> resultClass, T defaultValue) {
         T rc = settings == null ? null : (T) settings.get(key);
-        return rc == null ? parent.<T>get(key, defaultValue) : rc;
+        return rc == null ? parent.<T>get(key, resultClass, defaultValue) : rc;
     }
 
-    public <T> T get(Enum key) {
-        return get(key, null);
+    @Override
+    public <T> T get(Enum key, T defaultValue) {
+        return get(key, (Class<T>) defaultValue.getClass(), defaultValue);
+    }
+
+    public <T> T get(Enum key, Class<T> resultClass) {
+        return get(key, resultClass, null);
     }
 
 

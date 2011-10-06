@@ -31,5 +31,5 @@ public interface DataAccessor {
      */
     <T> T getOne(QueryRunner queryRunner, ParsedQuery query, Object... params);
 
-    QueryBuilder buildQuery(QueryRunner queryRunner);
+    <T> QueryBuilder<T> buildQuery(QueryRunner queryRunner);
 }

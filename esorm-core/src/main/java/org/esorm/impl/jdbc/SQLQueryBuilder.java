@@ -38,18 +38,18 @@ import static org.esorm.utils.IterableUtils.toList;
 /**
  * @author Vitalii Tymchyshyn
  */
-public class SQLQueryBuilder implements QueryBuilder {
+public class SQLQueryBuilder<R> implements QueryBuilder<R> {
 
     private final QueryRunner queryRunner;
     private EntityConfiguration entity;
-    private final SQLQueryFilters<QueryBuilder> filters = new SQLQueryFilters<QueryBuilder>(this);
+    private final SQLQueryFilters<QueryBuilder<R>> filters = new SQLQueryFilters<QueryBuilder<R>>(this);
     private int params;
 
     public SQLQueryBuilder(QueryRunner queryRunner) {
         this.queryRunner = queryRunner;
     }
 
-    public QueryBuilder select(EntityConfiguration configuration) {
+    public QueryBuilder<R> select(EntityConfiguration configuration) {
         if (entity != null) {
             throw new IllegalStateException("Entity is already set in this query");
         }
@@ -57,7 +57,7 @@ public class SQLQueryBuilder implements QueryBuilder {
         return this;
     }
 
-    public QueryFilters<QueryBuilder> filter() {
+    public QueryFilters<QueryBuilder<R>> filter() {
         return filters;
     }
 
@@ -122,7 +122,7 @@ public class SQLQueryBuilder implements QueryBuilder {
                 builderState.getParameterMapper(), resultColumns);
     }
 
-    public <R> QueryIterator<R> iterator() {
+    public QueryIterator<R> iterator() {
         return EsormUtils.perform(queryRunner, Connection.class, new EsormUtils.PerformRunner<QueryIterator<R>, Connection>() {
             public QueryIterator<R> perform(QueryRunner queryRunner, Connection connection) {
                 return build().<R>prepare(connection).iterator().autoCloseQuery(true);
@@ -130,7 +130,7 @@ public class SQLQueryBuilder implements QueryBuilder {
         });
     }
 
-    public <R> QueryIterator<R> iterator(final Map<String, Object> params) {
+    public QueryIterator<R> iterator(final Map<String, Object> params) {
         return EsormUtils.perform(queryRunner, Connection.class, new EsormUtils.PerformRunner<QueryIterator<R>, Connection>() {
             public QueryIterator<R> perform(QueryRunner queryRunner, Connection connection) {
                 return build().<R>prepare(connection).iterator(params).autoCloseQuery(true);
@@ -139,7 +139,7 @@ public class SQLQueryBuilder implements QueryBuilder {
     }
 
     @SuppressWarnings({"UnusedDeclaration"})
-    private class BuilderState implements Appendable {
+    private static class BuilderState implements Appendable {
         private final StringBuilder stringBuilder = new StringBuilder();
         private List<ParameterMapper> mappers = new ArrayList<ParameterMapper>();
         Map<SelectExpression, String> tablesInvolved = new HashMap<SelectExpression, String>();
@@ -532,7 +532,7 @@ public class SQLQueryBuilder implements QueryBuilder {
 
         @Override
         public R values(int blockSize, Iterable values) {
-            blockSize = Math.min(blockSize, queryRunner.<Integer>get(Config.MaxParamBlockSize));
+            blockSize = Math.min(blockSize, queryRunner.get(Config.MaxParamBlockSize, Integer.class));
             throw new UnsupportedOperationException();
         }
 

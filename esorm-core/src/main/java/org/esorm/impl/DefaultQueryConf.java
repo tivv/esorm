@@ -137,20 +137,26 @@ public class DefaultQueryConf
 
     @Override
     public <T> T get(Enum key, T defaultValue) {
+        return get(key, (Class<T>) defaultValue.getClass(), defaultValue);
+    }
+
+    @Override
+    public <T> T get(Enum key, Class<T> resultClass, T defaultValue) {
         if (defaultValue == null) {
             try {
-                key.getClass().getField("def").get(key);
-            } catch (NoSuchFieldException e) {
-                return null;
-            } catch (IllegalAccessException e) {
+                String def = key.getDeclaringClass().getField(key.name()).getAnnotation(Default.class).value();
+                if (resultClass == String.class)
+                    return (T) def;
+                return resultClass.getConstructor(String.class).newInstance(def);
+            } catch (Exception e) {
                 throw new RegisteredExceptionWrapper(e);
             }
         }
         return defaultValue;
     }
 
-    public <T> T get(Enum key) {
-        return get(key, null);
+    public <T> T get(Enum key, Class<T> resultClass) {
+        return get(key, resultClass, null);
     }
 
     public EntityConfiguration getConfiguration(String name, String configurationLocation, String managerLocation) {
@@ -165,7 +171,7 @@ public class DefaultQueryConf
         throw new IllegalStateException();
     }
 
-    public QueryBuilder buildQuery() {
+    public <T> QueryBuilder<T> buildQuery() {
         throw new UnsupportedOperationException();
     }
 

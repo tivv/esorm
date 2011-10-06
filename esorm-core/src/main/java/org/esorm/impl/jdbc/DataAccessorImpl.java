@@ -35,8 +35,8 @@ public class DataAccessorImpl implements DataAccessor {
     private static final GetWorker<Object> GET_WORKER = new GetWorker<Object>();
     private static final Logger LOG = Logger.getLogger(DataAccessorImpl.class.getName());
 
-    public QueryBuilder buildQuery(QueryRunner queryRunner) {
-        return new SQLQueryBuilder(queryRunner);
+    public <T> QueryBuilder<T> buildQuery(QueryRunner queryRunner) {
+        return new SQLQueryBuilder<T>(queryRunner);
     }
 
     /* (non-Javadoc)

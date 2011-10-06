@@ -1,4 +1,5 @@
 <dataset>
     <EasyTable identifier="1" name="test"/>
+    <EasyTable identifier="2" name="test2"/>
     <OneToOneJpa key="2" easy_id="1"/>
 </dataset>

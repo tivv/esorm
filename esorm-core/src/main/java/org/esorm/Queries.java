@@ -18,12 +18,27 @@
  */
 package org.esorm;
 
+import org.esorm.qbuilder.QueryBuilder;
+
+import java.util.Collection;
+
 /**
  * @author Vitalii Tymchyshyn
  */
 public class Queries {
-    public static ParsedQuery byId(QueryRunner runner, final EntityConfiguration configuration) {
-        return runner.buildQuery().select(configuration).filter().id().eq().param().done().build();
+    public static <R> QueryBuilder<R> byId(QueryRunner runner, final EntityConfiguration configuration) {
+        return runner.<R>buildQuery().select(configuration).filter().id().eq().param().done();
     }
 
+    public static <R> QueryBuilder<R> byIds(QueryRunner runner, final EntityConfiguration configuration, Object... ids) {
+        return runner.<R>buildQuery().select(configuration).filter().id().in().values(ids).done();
+    }
+
+    public static <R> QueryBuilder<R> byIds(QueryRunner runner, final EntityConfiguration configuration, Collection ids) {
+        return runner.<R>buildQuery().select(configuration).filter().id().in().values(ids).done();
+    }
+
+    public static <R> QueryBuilder<R> byIds(QueryRunner runner, final EntityConfiguration configuration, Iterable ids, int blockSize) {
+        return runner.<R>buildQuery().select(configuration).filter().id().in().values(blockSize, ids).done();
+    }
 }

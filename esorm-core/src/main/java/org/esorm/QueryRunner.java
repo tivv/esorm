@@ -69,9 +69,11 @@ public interface QueryRunner {
 
     <T extends Enum<T>> T getSelected(Class<T> clazz);
 
+    <T> T get(Enum key, Class<T> resultClass, T defaultValue);
+
     <T> T get(Enum key, T defaultValue);
 
-    <T> T get(Enum key);
+    <T> T get(Enum key, Class<T> resultClass);
 
     EntityConfiguration getConfiguration(String name, String configurationLocation, String managerLocation);
 
@@ -79,6 +81,6 @@ public interface QueryRunner {
 
     EntityConfiguration getConfiguration(Class<?> configurationClass);
 
-    QueryBuilder buildQuery();
+    <T> QueryBuilder<T> buildQuery();
 }
 

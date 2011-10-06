@@ -1,5 +1,5 @@
 /**
- * 
+ *
  * Copyright 2010 Vitalii Tymchyshyn
  * This file is part of EsORM.
  *
@@ -18,45 +18,60 @@
  */
 package org.esorm.usecase;
 
-import javax.sql.DataSource;
-
-import static org.esorm.EsormUtils.*;
+import org.esorm.Queries;
 import org.esorm.QueryConf;
+import org.esorm.utils.IterableUtils;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.unitils.UnitilsJUnit4TestClassRunner;
 import org.unitils.database.annotations.TestDataSource;
 import org.unitils.dbunit.annotation.DataSet;
+import org.unitils.reflectionassert.ReflectionAssert;
+
+import javax.sql.DataSource;
+import java.util.Arrays;
+import java.util.List;
+
+import static org.esorm.EsormUtils.connect;
 
 /**
  * @author Vitalii Tymchyshyn
- *
  */
 @RunWith(UnitilsJUnit4TestClassRunner.class)
 @DataSet
-public class QueryConfGetTest
-{
+public class QueryConfGetTest {
     @TestDataSource
     DataSource dataSource;
-    
+
     @Test
     public void testClass() {
         QueryConf conf = new QueryConf()
-            .connectionProvider(connect(dataSource));
+                .connectionProvider(connect(dataSource));
         EasyTable res = conf.get(EasyTable.class, 1L);
         Assert.assertEquals(1l, res.getId());
         Assert.assertEquals("test", res.getName());
     }
-    
+
     @Test
     public void testInterface() {
         QueryConf conf = new QueryConf()
-            .connectionProvider(connect(dataSource));
+                .connectionProvider(connect(dataSource));
         EasyTableIntf res = conf.get(conf.getConfiguration(
-            "EasyTable", EasyTableIntf.class.getName(), null), 1L);
+                "EasyTable", EasyTableIntf.class.getName(), null), 1L);
         Assert.assertEquals(1l, res.getId());
         Assert.assertEquals("test", res.getName());
     }
-     
+
+    @Test
+    public void testMultiple() {
+        QueryConf conf = new QueryConf()
+                .connectionProvider(connect(dataSource));
+        List<EasyTable> res = IterableUtils.copyToList(Queries.<EasyTable>byIds(conf, conf.getConfiguration(EasyTable.class), 1L, 2L));
+        ReflectionAssert.assertLenientEquals(Arrays.asList(
+                new EasyTable(1, "test"),
+                new EasyTable(2, "test2")
+        ), res);
+    }
+
 }

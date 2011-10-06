@@ -1,5 +1,5 @@
 /**
- * 
+ *
  * Copyright 2010 Vitalii Tymchyshyn
  * This file is part of EsORM.
  *
@@ -20,29 +20,34 @@ package org.esorm.usecase;
 
 /**
  * @author Vitalii Tymchyshyn
- *
  */
-public class EasyTable 
-{
-    private long id;
-    private String name;
-    public long getId()
-    {
-        return id;
+public class EasyTable {
+    public EasyTable() {
     }
-    public void setId(long id)
-    {
+
+    public EasyTable(long id, String name) {
         this.id = id;
-    }
-    public String getName()
-    {
-        return name;
-    }
-    public void setName(String name)
-    {
         this.name = name;
     }
-    
-    
+
+    private long id;
+    private String name;
+
+    public long getId() {
+        return id;
+    }
+
+    public void setId(long id) {
+        this.id = id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
 
 }
