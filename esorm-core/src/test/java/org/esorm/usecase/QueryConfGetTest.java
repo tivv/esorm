@@ -20,6 +20,7 @@ package org.esorm.usecase;
 
 import org.esorm.Queries;
 import org.esorm.QueryConf;
+import org.esorm.qbuilder.QueryBuilder;
 import org.esorm.utils.IterableUtils;
 import org.junit.Assert;
 import org.junit.Test;
@@ -64,7 +65,7 @@ public class QueryConfGetTest {
     }
 
     @Test
-    public void testMultiple() {
+    public void testMultipleIds() {
         QueryConf conf = new QueryConf()
                 .connectionProvider(connect(dataSource));
         List<EasyTable> res = IterableUtils.copyToList(Queries.<EasyTable>byIds(conf, conf.getConfiguration(EasyTable.class), 1L, 2L));
@@ -74,4 +75,14 @@ public class QueryConfGetTest {
         ), res);
     }
 
+    @Test
+    public void testMultipleIds_multiRow() {
+        QueryConf conf = new QueryConf()
+                .connectionProvider(connect(dataSource)).set(QueryBuilder.Config.MaxParamBlockSize, 1);
+        List<EasyTable> res = IterableUtils.copyToList(Queries.<EasyTable>byIds(conf, conf.getConfiguration(EasyTable.class), 1L, 2L));
+        ReflectionAssert.assertLenientEquals(Arrays.asList(
+                new EasyTable(1, "test"),
+                new EasyTable(2, "test2")
+        ), res);
+    }
 }

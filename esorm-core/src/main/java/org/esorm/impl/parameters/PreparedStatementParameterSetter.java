@@ -20,6 +20,7 @@ package org.esorm.impl.parameters;
 
 import org.esorm.RegisteredExceptionWrapper;
 import org.esorm.parameters.ParameterSetter;
+import org.esorm.utils.AssertUtils;
 
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -31,6 +32,7 @@ public class PreparedStatementParameterSetter implements ParameterSetter {
     private final PreparedStatement statement;
 
     public PreparedStatementParameterSetter(PreparedStatement statement) {
+        AssertUtils.argNotNull(statement, "Statement must be filled");
         this.statement = statement;
     }
 

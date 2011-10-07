@@ -36,6 +36,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import static org.esorm.utils.AssertUtils.argNotNull;
 
@@ -43,6 +45,7 @@ import static org.esorm.utils.AssertUtils.argNotNull;
  * @author Vitalii Tymchyshyn
  */
 public class PreparedFetchQuery<R> implements PreparedQuery<R> {
+    private static final Logger LOG = Logger.getLogger(PreparedFetchQuery.class.getName());
     private final Connection con;
     private final String query;
     private final ParameterMapper parameterMapper;
@@ -81,6 +84,7 @@ public class PreparedFetchQuery<R> implements PreparedQuery<R> {
     }
 
     public synchronized QueryIterator<R> iterator() {
+        ensureStatement();
         try {
             Object callState = parameterMapper.process(null, new PreparedStatementParameterSetter(statement), params);
             ResultSetQueryIterator<R> firstCallIterator = makeNewIterator();
@@ -91,6 +95,7 @@ public class PreparedFetchQuery<R> implements PreparedQuery<R> {
     }
 
     private ResultSetQueryIterator<R> makeNewIterator() throws SQLException {
+        LOG.log(Level.INFO, "Executing " + query);
         return new ResultSetQueryIterator<R>(this, queryCache, configuration, statement.executeQuery(), resultColumns);
     }
 
@@ -103,6 +108,12 @@ public class PreparedFetchQuery<R> implements PreparedQuery<R> {
     }
 
     public PreparedFetchQuery<R> reset(Object... params) {
+        ensureStatement();
+        this.params = params;
+        return this;
+    }
+
+    private void ensureStatement() {
         if (statement == null) {
             try {
                 statement = con.prepareStatement(query);
@@ -110,8 +121,6 @@ public class PreparedFetchQuery<R> implements PreparedQuery<R> {
                 throw new RegisteredExceptionWrapper(e);
             }
         }
-        this.params = params;
-        return this;
     }
 
     public PreparedFetchQuery<R> reset(Map<String, Object> params) {

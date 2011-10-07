@@ -26,6 +26,7 @@ import org.esorm.entity.db.ValueExpression;
 import org.esorm.impl.db.ParsedFetchQuery;
 import org.esorm.impl.parameters.*;
 import org.esorm.parameters.ParameterMapper;
+import org.esorm.parameters.ParameterSetter;
 import org.esorm.parameters.ParameterTransformer;
 import org.esorm.qbuilder.*;
 
@@ -140,6 +141,7 @@ public class SQLQueryBuilder<R> implements QueryBuilder<R> {
 
     @SuppressWarnings({"UnusedDeclaration"})
     private static class BuilderState implements Appendable {
+        private int parametersWithoutMapper = 0;
         private final StringBuilder stringBuilder = new StringBuilder();
         private List<ParameterMapper> mappers = new ArrayList<ParameterMapper>();
         Map<SelectExpression, String> tablesInvolved = new HashMap<SelectExpression, String>();
@@ -163,6 +165,12 @@ public class SQLQueryBuilder<R> implements QueryBuilder<R> {
             }
         }
 
+        public BuilderState appendParameter() {
+            stringBuilder.append('?');
+            parametersWithoutMapper++;
+            return this;
+        }
+
         public BuilderState appendParameter(ParameterMapper mapper) {
             mappers.add(mapper);
             stringBuilder.append('?');
@@ -170,11 +178,11 @@ public class SQLQueryBuilder<R> implements QueryBuilder<R> {
         }
 
         public BuilderState appendParameter(ParameterTransformer transformer) {
-            return appendParameter(new TransformerParameterMapper(transformer, mappers.size()));
+            return appendParameter(new TransformerParameterMapper(transformer, getNextParameterNumber()));
         }
 
         public int getNextParameterNumber() {
-            return mappers.size();
+            return mappers.size() + parametersWithoutMapper;
         }
 
         public BuilderState append(Object obj) {
@@ -423,11 +431,44 @@ public class SQLQueryBuilder<R> implements QueryBuilder<R> {
     }
 
     private static class ObjectListSQLValue extends SQLValue {
+        private final int blockSize;
+        private final Iterable values;
+
+        private ObjectListSQLValue(int blockSize, Iterable values) {
+            this.blockSize = blockSize;
+            this.values = values;
+        }
 
         @Override
         protected void addValue(BuilderState builder, int valueNum) {
-            //To change body of implemented methods use File | Settings | File Templates.
+            builder.append('(');
+            final int firstParam = builder.getNextParameterNumber();
+            builder.appendParameter(new ParameterMapper<Iterator>() {
+                @Override
+                public Iterator process(Iterator state, ParameterSetter setter, Object... inputValues) {
+                    if (state == null) {
+                        state = values.iterator();
+                        if (!state.hasNext()) {
+                            for (int i = 0; i < blockSize; i++) {
+                                setter.setParameter(i + firstParam, null);
+                            }
+                            return null;
+                        }
+                    }
+                    Object firstVal = state.next();
+                    setter.setParameter(firstParam, firstVal);
+                    for (int i = 1; i < blockSize; i++) {
+                        setter.setParameter(i + firstParam, state.hasNext() ? state.next() : firstVal);
+                    }
+                    return state.hasNext() ? state : null;
+                }
+            });
+            for (int i = 1; i < blockSize; i++) {
+                builder.append(',').appendParameter();
+            }
+            builder.append(')');
         }
+
     }
 
     private static class PositionalParamSQLValue extends SQLValue {
@@ -448,7 +489,6 @@ public class SQLQueryBuilder<R> implements QueryBuilder<R> {
         private final SQLValue leftValue;
         private final R ret;
         private String operation;
-        private boolean multiRightValue;
         private SQLValue rightValue;
 
         public SQLValueFilter(R ret, SQLValue leftValue) {
@@ -504,7 +544,6 @@ public class SQLQueryBuilder<R> implements QueryBuilder<R> {
         @Override
         public FilterValues<R> in() {
             setOperation(" in ");
-            multiRightValue = true;
             return this;
         }
 
@@ -533,7 +572,7 @@ public class SQLQueryBuilder<R> implements QueryBuilder<R> {
         @Override
         public R values(int blockSize, Iterable values) {
             blockSize = Math.min(blockSize, queryRunner.get(Config.MaxParamBlockSize, Integer.class));
-            throw new UnsupportedOperationException();
+            return setRightValue(new ObjectListSQLValue(blockSize, values));
         }
 
         @Override
