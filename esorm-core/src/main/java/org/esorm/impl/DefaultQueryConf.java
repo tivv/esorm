@@ -129,6 +129,11 @@ public class DefaultQueryConf
         return new QueryConf(this);
     }
 
+    @Override
+    public <T extends Enum<T>> T getSelected(Class<T> clazz, T primaryValue) {
+        return primaryValue != null ? primaryValue : getSelected(clazz);
+    }
+
     public <T extends Enum<T>> T getSelected(Class<T> clazz) {
         Default d = clazz.getAnnotation(Default.class);
         return d != null ? Enum.<T>valueOf(clazz, d.value()) :
@@ -142,13 +147,16 @@ public class DefaultQueryConf
 
     @Override
     public <T> T get(Enum key, Class<T> resultClass, T defaultValue) {
-        if (defaultValue == null) {
-            try {
+        if (defaultValue == null)
+        {
+            try
+            {
                 String def = key.getDeclaringClass().getField(key.name()).getAnnotation(Default.class).value();
                 if (resultClass == String.class)
                     return (T) def;
                 return resultClass.getConstructor(String.class).newInstance(def);
-            } catch (Exception e) {
+            } catch (Exception e)
+            {
                 throw new RegisteredExceptionWrapper(e);
             }
         }
@@ -179,32 +187,42 @@ public class DefaultQueryConf
     private static <T> List<T> loadServices(Class<T> clazz) {
         final Map<T, Double> services = new IdentityHashMap<T, Double>();
         Enumeration<URL> resourceList;
-        try {
+        try
+        {
             resourceList = clazz.getClassLoader().getResources("META-INF/services/" + clazz.getName() + ".properties");
-        } catch (IOException e) {
+        } catch (IOException e)
+        {
             throw new RegisteredExceptionWrapper("Could not load resources for " + clazz, e);
         }
-        while (resourceList.hasMoreElements()) {
+        while (resourceList.hasMoreElements())
+        {
             URL resource = resourceList.nextElement();
             Properties properties = new Properties();
-            try {
+            try
+            {
                 properties.load(resource.openStream());
-            } catch (IOException e) {
+            } catch (IOException e)
+            {
                 LOG.log(Level.WARNING, "Could not load service list for " + clazz + " from " + resource, e);
             }
-            for (Entry<Object, Object> e : properties.entrySet()) {
+            for (Entry<Object, Object> e : properties.entrySet())
+            {
                 T service;
-                try {
+                try
+                {
                     service = (T) Class.forName(e.getKey().toString()).newInstance();
-                } catch (Exception ex) {
+                } catch (Exception ex)
+                {
                     LOG.log(Level.WARNING, "Service " + e.getKey() + " defined in " + resource +
                             " could not be loaded and was skipped", ex);
                     continue;
                 }
                 Double priority;
-                try {
+                try
+                {
                     priority = Double.valueOf(e.getValue().toString());
-                } catch (NumberFormatException ex) {
+                } catch (NumberFormatException ex)
+                {
                     LOG.warning("Service " + e.getKey() + " defined in " + resource +
                             " has invalid priority " + e.getValue() + ": " + ex.getMessage() +
                             " Default priority used");

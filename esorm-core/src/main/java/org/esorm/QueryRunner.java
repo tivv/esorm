@@ -69,6 +69,8 @@ public interface QueryRunner {
 
     <T extends Enum<T>> T getSelected(Class<T> clazz);
 
+    <T extends Enum<T>> T getSelected(Class<T> clazz, T primaryValue);
+
     <T> T get(Enum key, Class<T> resultClass, T defaultValue);
 
     <T> T get(Enum key, T defaultValue);

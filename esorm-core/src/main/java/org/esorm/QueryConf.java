@@ -374,6 +374,11 @@ public class QueryConf implements QueryRunner {
         return this;
     }
 
+    @Override
+    public <T extends Enum<T>> T getSelected(Class<T> clazz, T primaryValue) {
+        return primaryValue != null ? primaryValue : getSelected(clazz);
+    }
+
     public <T extends Enum<T>> T getSelected(Class<T> clazz) {
         T rc = lastSettings == null ? null : (T) lastSettings.get(clazz);
         return rc == null ? parent.getSelected(clazz) : rc;

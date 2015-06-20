@@ -18,10 +18,10 @@
  */
 package org.esorm.impl.db;
 
-import java.io.IOException;
-
 import org.esorm.RegisteredExceptionWrapper;
 import org.esorm.entity.db.Table;
+
+import java.io.IOException;
 
 /**
  * @author Vitalii Tymchyshyn
@@ -83,5 +83,9 @@ implements Table
         return name;
     }
 
-    
+    @Override
+    public String toString() {
+        return "TableImpl{" + (catalog != null ? catalog + '.' : "") +
+                (schema != null ? schema + '.' : "") + name + "}";
+    }
 }

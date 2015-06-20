@@ -68,6 +68,27 @@ public class SQLQueryBuilder<R> implements QueryBuilder<R> {
         Map<SelectExpression, String> tablesInvolved = builderState.tablesInvolved;
         final Map<ValueExpression, Integer> resultColumns = new HashMap<ValueExpression, Integer>();
         query.append("select ");
+        addProperties(entity, query, tablesInvolved, resultColumns);
+        if (resultColumns.isEmpty())
+            throw new IllegalArgumentException("Nothing to select for " + entity.getName());
+        //TODO - complex primary key by id / name
+        query.append(" from ");
+        addFromList(query, tablesInvolved);
+        if (filters.prepare())
+        {
+            query.append(" where ");
+            filters.addQueryText(builderState);
+        }
+        return new ParsedFetchQuery(entity, query.toString(),
+                builderState.getParameterMapper(), resultColumns);
+    }
+
+    private void addProperties(EntityConfiguration entity, StringBuilder query, Map<SelectExpression, String> tablesInvolved, Map<ValueExpression, Integer> resultColumns) {
+        addSimpleProperties(entity, query, tablesInvolved, resultColumns);
+        addComplexProperties(entity, query, tablesInvolved, resultColumns);
+    }
+
+    private void addSimpleProperties(EntityConfiguration entity, StringBuilder query, Map<SelectExpression, String> tablesInvolved, Map<ValueExpression, Integer> resultColumns) {
         Iterable<EntityProperty> properties = entity.getProperties();
         for (EntityProperty property : properties) {
             ValueExpression expression = property.getExpression();
@@ -85,10 +106,34 @@ public class SQLQueryBuilder<R> implements QueryBuilder<R> {
                 expression.appendQuery(query, tablesInvolved);
             }
         }
-        if (resultColumns.isEmpty())
-            throw new IllegalArgumentException("Nothing to select for " + entity.getName());
-        //TODO - complex primary key by id / name
-        query.append(" from ");
+    }
+
+    private void addComplexProperties(EntityConfiguration entity, StringBuilder query, Map<SelectExpression, String> tablesInvolved, Map<ValueExpression, Integer> resultColumns) {
+        for (Map.Entry<String, ComplexProperty> entry : entity.getComplexProperties().entrySet())
+        {
+            ComplexProperty property = entry.getValue();
+            ComplexProperty.FetchType fetchType = queryRunner.getSelected(ComplexProperty.FetchType.class, property.getFetchType());
+            switch (fetchType)
+            {
+                case None:
+                    break;
+                case Join:
+                    if (property.isCollection())
+                    {
+                        throw new UnsupportedOperationException("Collections are not supported yet");
+                    } else
+                    {
+                        addProperties(property.getConfiguration(queryRunner), query, tablesInvolved, resultColumns);
+                    }
+                    break;
+                case Select:
+                    //TODO
+                    throw new UnsupportedOperationException("Chained selects are not supported yet");
+            }
+        }
+    }
+
+    private void addFromList(StringBuilder query, Map<SelectExpression, String> tablesInvolved) {
         Iterable<Column> firstTablePK = null;
         Map<SelectExpression, ? extends Iterable<Column>> primaryKeys = entity.getIdColumns();
         for (Map.Entry<SelectExpression, String> e : tablesInvolved.entrySet()) {
@@ -115,12 +160,6 @@ public class SQLQueryBuilder<R> implements QueryBuilder<R> {
                 //TODO add .hasNext check
             }
         }
-        if (filters.prepare()) {
-            query.append(" where ");
-            filters.addQueryText(builderState);
-        }
-        return new ParsedFetchQuery(entity, query.toString(),
-                builderState.getParameterMapper(), resultColumns);
     }
 
     public QueryIterator<R> iterator() {

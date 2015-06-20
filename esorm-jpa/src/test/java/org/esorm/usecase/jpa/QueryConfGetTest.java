@@ -18,6 +18,7 @@
  */
 package org.esorm.usecase.jpa;
 
+import org.esorm.ComplexProperty;
 import org.esorm.QueryConf;
 import org.junit.Assert;
 import org.junit.Test;
@@ -51,9 +52,9 @@ public class QueryConfGetTest {
     }
 
     @Test
-    public void testGet_OneToOne() {
+    public void testGet_OneToOne_Join() {
         QueryConf conf = new QueryConf()
-                .connectionProvider(connect(dataSource));
+                .connectionProvider(connect(dataSource)).set(ComplexProperty.FetchType.Join);
         OneToOneJpa res = conf.get(OneToOneJpa.class, 2L);
         Assert.assertEquals(2l, res.getKey());
         Assert.assertEquals(1l, res.getRelated().getId());
