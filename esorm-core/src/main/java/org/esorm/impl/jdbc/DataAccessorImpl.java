@@ -19,6 +19,7 @@
 package org.esorm.impl.jdbc;
 
 import org.esorm.*;
+import org.esorm.impl.jdbc.builder.SQLQueryBuilder;
 import org.esorm.qbuilder.QueryBuilder;
 
 import java.sql.Connection;
@@ -54,22 +55,30 @@ public class DataAccessorImpl implements DataAccessor {
     private <T, P1, P2> T run(Worker<T, P1, P2> worker, QueryRunner queryRunner, P1 param1, P2 param2) {
         Connection con = null;
         boolean hadError = true;
-        try {
+        try
+        {
             con = queryRunner.getConnectionProvider(Connection.class).takeConnection();
             T rc = worker.run(con, queryRunner, param1, param2);
             hadError = false;
             return rc;
-        } catch (Exception e) {
+        } catch (Exception e)
+        {
             queryRunner.getErrorHandler().handle(e);
             throw new IllegalStateException("Error handler could not handle", e);
-        } finally {
-            if (con != null) {
-                try {
+        } finally
+        {
+            if (con != null)
+            {
+                try
+                {
                     queryRunner.getConnectionProvider(Connection.class).returnConnection(con);
-                } catch (Exception e) {
-                    if (!hadError) {
+                } catch (Exception e)
+                {
+                    if (!hadError)
+                    {
                         queryRunner.getErrorHandler().handle(e);
-                    } else {
+                    } else
+                    {
                         LOG.log(Level.WARNING, "Second exception on connection return dropped", e);
                     }
                 }
@@ -92,7 +101,8 @@ public class DataAccessorImpl implements DataAccessor {
             boolean hadError = true;
             PreparedQuery<R> preparedQuery = null;
             QueryIterator<R> rs = null;
-            try {
+            try
+            {
                 preparedQuery = query.prepare(con, params);
                 rs = preparedQuery.iterator();
                 if (!rs.hasNext())
@@ -102,17 +112,22 @@ public class DataAccessorImpl implements DataAccessor {
                     throw new IllegalStateException("More than one row returned");
                 hadError = false;
                 return rc;
-            } finally {
-                if (!hadError) {
+            } finally
+            {
+                if (!hadError)
+                {
                     rs.close();
                     preparedQuery.close();
-                } else {
-                    try {
+                } else
+                {
+                    try
+                    {
                         if (rs != null)
                             rs.close();
                         if (preparedQuery != null)
                             preparedQuery.close();
-                    } catch (Exception e) {
+                    } catch (Exception e)
+                    {
                         LOG.log(Level.WARNING, "Second exception while statement close", e);
                     }
                 }

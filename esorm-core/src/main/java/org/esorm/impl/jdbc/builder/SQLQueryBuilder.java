@@ -16,18 +16,19 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with EsORM.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.esorm.impl.jdbc;
+package org.esorm.impl.jdbc.builder;
 
 import org.esorm.*;
 import org.esorm.entity.EntityProperty;
 import org.esorm.entity.db.Column;
-import org.esorm.entity.db.SelectExpression;
+import org.esorm.entity.db.FromExpression;
 import org.esorm.entity.db.ValueExpression;
 import org.esorm.impl.db.ParsedFetchQuery;
-import org.esorm.impl.parameters.*;
+import org.esorm.impl.parameters.FixedValueParameterMapper;
+import org.esorm.impl.parameters.NopParameterTransformer;
+import org.esorm.impl.parameters.TransformerParameterMapper;
 import org.esorm.parameters.ParameterMapper;
 import org.esorm.parameters.ParameterSetter;
-import org.esorm.parameters.ParameterTransformer;
 import org.esorm.qbuilder.*;
 
 import java.sql.Connection;
@@ -63,42 +64,65 @@ public class SQLQueryBuilder<R> implements QueryBuilder<R> {
     }
 
     public ParsedQuery build() {
-        BuilderState builderState = new BuilderState();
-        StringBuilder query = builderState.getStringBuilder();
-        Map<SelectExpression, String> tablesInvolved = builderState.tablesInvolved;
-        final Map<ValueExpression, Integer> resultColumns = new HashMap<ValueExpression, Integer>();
-        query.append("select ");
-        addProperties(entity, query, tablesInvolved, resultColumns);
+        BuildState buildState = new BuildState();
+        final Map<ValueExpression, Integer> resultColumns = buildState.getResultColumns();
+        buildState.append("select ");
+        addRootProperties(entity, buildState);
         if (resultColumns.isEmpty())
             throw new IllegalArgumentException("Nothing to select for " + entity.getName());
         //TODO - complex primary key by id / name
-        query.append(" from ");
-        addFromList(query, tablesInvolved);
+        buildState.append(" from ");
+        addFromList(buildState);
         if (filters.prepare())
         {
-            query.append(" where ");
-            filters.addQueryText(builderState);
+            buildState.append(" where ");
+            filters.addQueryText(buildState);
         }
-        return new ParsedFetchQuery(entity, query.toString(),
-                builderState.getParameterMapper(), resultColumns);
+        return new ParsedFetchQuery(entity, buildState.getStringBuilder().toString(),
+                buildState.getParameterMapper(), resultColumns);
     }
 
-    private void addProperties(EntityConfiguration entity, StringBuilder query, Map<SelectExpression, String> tablesInvolved, Map<ValueExpression, Integer> resultColumns) {
-        addSimpleProperties(entity, query, tablesInvolved, resultColumns);
-        addComplexProperties(entity, query, tablesInvolved, resultColumns);
+    private void addRootProperties(EntityConfiguration entity, BuildState buildState) {
+        //TODO: Selecting entities with optional columns only
+        addProperties(entity, buildState, null, null);
     }
 
-    private void addSimpleProperties(EntityConfiguration entity, StringBuilder query, Map<SelectExpression, String> tablesInvolved, Map<ValueExpression, Integer> resultColumns) {
+    private void addProperties(EntityConfiguration entity, BuildState buildState, FromExpression joinTo, Iterable<Column> joinToColumns) {
+        addSimpleProperties(entity, buildState, joinTo, joinToColumns);
+        addComplexProperties(entity, buildState);
+    }
+
+    private void addSimpleProperties(EntityConfiguration entity, BuildState buildState, FromExpression joinTo, Iterable<Column> joinToColumns) {
+        StringBuilder query = buildState.getStringBuilder();
+        Map<FromExpression, TableSelectData> tablesInvolved = buildState.getTablesInvolved();
+        final Map<ValueExpression, Integer> resultColumns = buildState.getResultColumns();
         Iterable<EntityProperty> properties = entity.getProperties();
         for (EntityProperty property : properties) {
             ValueExpression expression = property.getExpression();
             if (!resultColumns.containsKey(expression)) {
                 int num = resultColumns.size() + 1;
                 resultColumns.put(expression, num);
-                for (SelectExpression table : expression.getTables()) {
+                for (FromExpression table : expression.getTables())
+                {
                     if (!tablesInvolved.containsKey(table)) {
                         int tableNum = tablesInvolved.size() + 1;
-                        tablesInvolved.put(table, "t" + tableNum);
+                        TableSelectData tableSelectData;
+                        if (tablesInvolved.isEmpty())
+                        {
+                            tableSelectData = new TableSelectData("t" + tableNum);
+                            joinTo = table;
+                            joinToColumns = entity.getIdColumns().get(table);
+                        } else
+                        {
+                            tableSelectData = new TableSelectData(
+                                    "t" + tableNum,
+                                    "inner",
+                                    joinTo,
+                                    entity.getIdColumns().get(table),
+                                    joinToColumns
+                            );
+                        }
+                        tablesInvolved.put(table, tableSelectData);
                     }
                 }
                 if (num != 1)
@@ -108,7 +132,7 @@ public class SQLQueryBuilder<R> implements QueryBuilder<R> {
         }
     }
 
-    private void addComplexProperties(EntityConfiguration entity, StringBuilder query, Map<SelectExpression, String> tablesInvolved, Map<ValueExpression, Integer> resultColumns) {
+    private void addComplexProperties(EntityConfiguration entity, BuildState buildState) {
         for (Map.Entry<String, ComplexProperty> entry : entity.getComplexProperties().entrySet())
         {
             ComplexProperty property = entry.getValue();
@@ -123,7 +147,7 @@ public class SQLQueryBuilder<R> implements QueryBuilder<R> {
                         throw new UnsupportedOperationException("Collections are not supported yet");
                     } else
                     {
-                        addProperties(property.getConfiguration(queryRunner), query, tablesInvolved, resultColumns);
+                        addRootProperties(property.getConfiguration(queryRunner), buildState);
                     }
                     break;
                 case Select:
@@ -133,13 +157,16 @@ public class SQLQueryBuilder<R> implements QueryBuilder<R> {
         }
     }
 
-    private void addFromList(StringBuilder query, Map<SelectExpression, String> tablesInvolved) {
+    private void addFromList(BuildState buildState) {
+        Map<FromExpression, TableSelectData> tablesInvolved = buildState.getTablesInvolved();
+        StringBuilder query = buildState.getStringBuilder();
         Iterable<Column> firstTablePK = null;
-        Map<SelectExpression, ? extends Iterable<Column>> primaryKeys = entity.getIdColumns();
-        for (Map.Entry<SelectExpression, String> e : tablesInvolved.entrySet()) {
+        Map<FromExpression, ? extends Iterable<Column>> primaryKeys = entity.getIdColumns();
+        for (Map.Entry<FromExpression, TableSelectData> e : tablesInvolved.entrySet())
+        {
             if (firstTablePK != null)
                 query.append(" join ");
-            e.getKey().appendQuery(query, e.getValue());
+            e.getKey().appendQuery(query, e.getValue().getAlias());
             Iterable<Column> primaryKey = primaryKeys.get(e.getKey());
             if (primaryKey == null && tablesInvolved.size() > 1)
                 throw new IllegalStateException("Table " + e.getKey() + " does not have primary key specified");
@@ -178,127 +205,6 @@ public class SQLQueryBuilder<R> implements QueryBuilder<R> {
         });
     }
 
-    @SuppressWarnings({"UnusedDeclaration"})
-    private static class BuilderState implements Appendable {
-        private int parametersWithoutMapper = 0;
-        private final StringBuilder stringBuilder = new StringBuilder();
-        private List<ParameterMapper> mappers = new ArrayList<ParameterMapper>();
-        Map<SelectExpression, String> tablesInvolved = new HashMap<SelectExpression, String>();
-
-        public StringBuilder getStringBuilder() {
-            return stringBuilder;
-        }
-
-        public Map<SelectExpression, String> getTablesInvolved() {
-            return tablesInvolved;
-        }
-
-        private ParameterMapper getParameterMapper() {
-            switch (mappers.size()) {
-                case 0:
-                    return NoParameterMapper.INSTANCE;
-                case 1:
-                    return mappers.get(0);
-                default:
-                    return new MultiParameterMapper(mappers.toArray(new ParameterMapper[mappers.size()]));
-            }
-        }
-
-        public BuilderState appendParameter() {
-            stringBuilder.append('?');
-            parametersWithoutMapper++;
-            return this;
-        }
-
-        public BuilderState appendParameter(ParameterMapper mapper) {
-            mappers.add(mapper);
-            stringBuilder.append('?');
-            return this;
-        }
-
-        public BuilderState appendParameter(ParameterTransformer transformer) {
-            return appendParameter(new TransformerParameterMapper(transformer, getNextParameterNumber()));
-        }
-
-        public int getNextParameterNumber() {
-            return mappers.size() + parametersWithoutMapper;
-        }
-
-        public BuilderState append(Object obj) {
-            stringBuilder.append(obj);
-            return this;
-        }
-
-        public BuilderState append(String str) {
-            stringBuilder.append(str);
-            return this;
-        }
-
-        public BuilderState append(StringBuffer sb) {
-            stringBuilder.append(sb);
-            return this;
-        }
-
-        public BuilderState append(CharSequence s) {
-            stringBuilder.append(s);
-            return this;
-        }
-
-        public BuilderState append(CharSequence s, int start, int end) {
-            stringBuilder.append(s, start, end);
-            return this;
-        }
-
-        public BuilderState append(char[] str) {
-            stringBuilder.append(str);
-            return this;
-        }
-
-        public BuilderState append(char[] str, int offset, int len) {
-            stringBuilder.append(str, offset, len);
-            return this;
-        }
-
-        public BuilderState append(boolean b) {
-            stringBuilder.append(b);
-            return this;
-        }
-
-        public BuilderState append(char c) {
-            stringBuilder.append(c);
-            return this;
-        }
-
-        public BuilderState append(int i) {
-            stringBuilder.append(i);
-            return this;
-        }
-
-        public BuilderState append(long lng) {
-            stringBuilder.append(lng);
-            return this;
-        }
-
-        public BuilderState append(float f) {
-            stringBuilder.append(f);
-            return this;
-        }
-
-        public BuilderState append(double d) {
-            stringBuilder.append(d);
-            return this;
-        }
-    }
-
-    private interface SQLQueryFilter {
-        void addQueryText(BuilderState builder);
-
-        /**
-         * @return if filters are not empty and should be used
-         */
-        boolean prepare();
-    }
-
     private class NotSQLQueryFilter<T> implements SQLQueryFilter {
         private final SQLQueryFilters<T> subFilter;
 
@@ -314,7 +220,7 @@ public class SQLQueryBuilder<R> implements QueryBuilder<R> {
             return subFilter;
         }
 
-        public void addQueryText(BuilderState builder) {
+        public void addQueryText(BuildState builder) {
             builder.append("not(");
             subFilter.addQueryText(builder);
             builder.append(')');
@@ -336,7 +242,7 @@ public class SQLQueryBuilder<R> implements QueryBuilder<R> {
             this.ret = ret;
         }
 
-        public void addQueryText(BuilderState builder) {
+        public void addQueryText(BuildState builder) {
             boolean first = true;
             for (SQLQueryFilter filter : filters) {
                 if (!first) {
@@ -404,7 +310,7 @@ public class SQLQueryBuilder<R> implements QueryBuilder<R> {
     }
 
     private static abstract class SQLValue {
-        protected abstract void addValue(BuilderState builder, int valueNum);
+        protected abstract void addValue(BuildState builder, int valueNum);
 
         protected int getNumValues() {
             return 1;
@@ -436,7 +342,7 @@ public class SQLQueryBuilder<R> implements QueryBuilder<R> {
         }
 
         @Override
-        protected void addValue(BuilderState builder, int valueNum) {
+        protected void addValue(BuildState builder, int valueNum) {
             idColumns.get(valueNum).appendQuery(builder, builder.getTablesInvolved());
         }
 
@@ -446,7 +352,7 @@ public class SQLQueryBuilder<R> implements QueryBuilder<R> {
         private static NullSQLValue INSTANCE = new NullSQLValue();
 
         @Override
-        protected void addValue(BuilderState builder, int valueNum) {
+        protected void addValue(BuildState builder, int valueNum) {
             builder.append("null");
         }
 
@@ -464,7 +370,7 @@ public class SQLQueryBuilder<R> implements QueryBuilder<R> {
         }
 
         @Override
-        protected void addValue(BuilderState builder, int valueNum) {
+        protected void addValue(BuildState builder, int valueNum) {
             builder.appendParameter(new FixedValueParameterMapper(builder.getNextParameterNumber(), value));
         }
     }
@@ -479,7 +385,7 @@ public class SQLQueryBuilder<R> implements QueryBuilder<R> {
         }
 
         @Override
-        protected void addValue(BuilderState builder, int valueNum) {
+        protected void addValue(BuildState builder, int valueNum) {
             builder.append('(');
             final int firstParam = builder.getNextParameterNumber();
             builder.appendParameter(new ParameterMapper<Iterator>() {
@@ -518,7 +424,7 @@ public class SQLQueryBuilder<R> implements QueryBuilder<R> {
         }
 
         @Override
-        protected void addValue(BuilderState builder, int valueNum) {
+        protected void addValue(BuildState builder, int valueNum) {
             builder.appendParameter(new TransformerParameterMapper(NopParameterTransformer.INSTANCE, paramNum,
                     builder.getNextParameterNumber()));
         }
@@ -535,7 +441,7 @@ public class SQLQueryBuilder<R> implements QueryBuilder<R> {
             this.ret = ret;
         }
 
-        public void addQueryText(BuilderState builder) {
+        public void addQueryText(BuildState builder) {
             int numValues = leftValue.getNumValues();
             if (!rightValue.providesValues(numValues))
                 throw new IllegalArgumentException("Incompatible values " + leftValue + " and " + rightValue

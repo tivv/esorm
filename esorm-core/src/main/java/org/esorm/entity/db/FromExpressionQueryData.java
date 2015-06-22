@@ -1,6 +1,6 @@
 /**
  *
- * Copyright 2010 Vitalii Tymchyshyn
+ * Copyright 2015 Vitalii Tymchyshyn
  * This file is part of EsORM.
  *
  * EsORM is free software: you can redistribute it and/or modify
@@ -21,9 +21,6 @@ package org.esorm.entity.db;
 /**
  * @author Vitalii Tymchyshyn
  */
-public interface Table extends FromExpression {
-    String getSchema();
-
-    String getName();
-
+public interface FromExpressionQueryData {
+    String getAlias();
 }

@@ -20,7 +20,7 @@ package org.esorm;
 
 import org.esorm.entity.EntityProperty;
 import org.esorm.entity.db.Column;
-import org.esorm.entity.db.SelectExpression;
+import org.esorm.entity.db.FromExpression;
 
 import java.util.Map;
 
@@ -36,7 +36,7 @@ public interface EntityConfiguration {
 
     Iterable<EntityProperty> getProperties();
 
-    Map<SelectExpression, ? extends Iterable<Column>> getIdColumns();
+    Map<FromExpression, ? extends Iterable<Column>> getIdColumns();
 
     Map<String, ComplexProperty> getComplexProperties();
 }

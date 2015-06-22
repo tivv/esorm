@@ -1,5 +1,5 @@
 /**
- * 
+ *
  * Copyright 2010 Vitalii Tymchyshyn
  * This file is part of EsORM.
  *
@@ -18,40 +18,39 @@
  */
 package org.esorm.impl;
 
-import java.util.*;
-import java.util.Map.Entry;
-
 import org.esorm.EntityManager;
 import org.esorm.LazyManagedEntityConfiguration;
 import org.esorm.entity.EntityProperty;
 import org.esorm.entity.db.Column;
-import org.esorm.entity.db.SelectExpression;
+import org.esorm.entity.db.FromExpression;
+
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 
 /**
  * @author Vitalii Tymchyshyn
- *
  */
 public class LazyManagedEntityConfigurationImpl extends MutableEntityConfigurationImpl
-implements LazyManagedEntityConfiguration
-{
+        implements LazyManagedEntityConfiguration {
     private boolean fixed = false;
 
     /**
      * @param name
      */
-    public LazyManagedEntityConfigurationImpl(String name)
-    {
+    public LazyManagedEntityConfigurationImpl(String name) {
         super(name);
     }
 
     /* (non-Javadoc)
      * @see org.esorm.LazyManagedEntityConfiguration#setManager(org.esorm.EntityManager)
      */
-    public void setManager(EntityManager manager)
-    {
+    public void setManager(EntityManager manager) {
         checkNotFixed();
         setProperties(Collections.unmodifiableList(getProperties()));
-        for (Entry<SelectExpression, List<Column>> e :getIdColumns().entrySet()) {
+        for (Entry<FromExpression, List<Column>> e : getIdColumns().entrySet())
+        {
             e.setValue(Collections.unmodifiableList(e.getValue()));
         }
         setIdColumns(Collections.unmodifiableMap(getIdColumns()));
@@ -61,29 +60,25 @@ implements LazyManagedEntityConfiguration
     }
 
     /**
-     * 
+     *
      */
-    private void checkNotFixed()
-    {
+    private void checkNotFixed() {
         if (fixed)
             throw new IllegalStateException("Already fixed");
-        
+
     }
 
-    public void setLocation(String location)
-    {
+    public void setLocation(String location) {
         checkNotFixed();
         super.setLocation(location);
     }
 
-    public void setProperties(List<EntityProperty> properties)
-    {
+    public void setProperties(List<EntityProperty> properties) {
         checkNotFixed();
         super.setProperties(properties);
     }
 
-    protected void setIdColumns(Map<SelectExpression, List<Column>> primaryKeys)
-    {
+    protected void setIdColumns(Map<FromExpression, List<Column>> primaryKeys) {
         checkNotFixed();
         super.setIdColumns(primaryKeys);
     }

@@ -1,5 +1,5 @@
 /**
- * 
+ *
  * Copyright 2010 Vitalii Tymchyshyn
  * This file is part of EsORM.
  *
@@ -20,11 +20,10 @@ package org.esorm.entity.db;
 
 /**
  * @author Vitalii Tymchyshyn
- *
  */
-public interface Column extends ValueExpression
-{
-    SelectExpression getTable();
+public interface Column extends ValueExpression {
+    FromExpression getTable();
+
     String getName();
 
 }

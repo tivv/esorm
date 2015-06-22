@@ -1,6 +1,6 @@
 /**
- * 
- * Copyright 2010 Vitalii Tymchyshyn
+ *
+ * Copyright 2010-2015 Vitalii Tymchyshyn
  * This file is part of EsORM.
  *
  * EsORM is free software: you can redistribute it and/or modify
@@ -16,13 +16,16 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with EsORM.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.esorm.entity.db;
+package org.esorm.impl.jdbc.builder;
 
 /**
  * @author Vitalii Tymchyshyn
- *
  */
-public interface SelectExpression
-{
-    void appendQuery(Appendable appendTo, String alias);
+interface SQLQueryFilter {
+    void addQueryText(BuildState builder);
+
+    /**
+     * @return if filters are not empty and should be used
+     */
+    boolean prepare();
 }

@@ -18,7 +18,7 @@
  */
 package org.esorm;
 
-import org.esorm.entity.db.SelectExpression;
+import org.esorm.entity.db.FromExpression;
 import org.esorm.entity.db.ValueExpression;
 import org.esorm.utils.Closeable;
 
@@ -33,9 +33,9 @@ public interface PreparedQuery<R> extends Iterable<R>, Closeable {
 
     /**
      * @return map from each level (defined by table) to list or columns that group multiple result set records into
-     *         one resulting entity
+     * one resulting entity
      */
-    Map<SelectExpression, List<ValueExpression>> getResultGrouping();
+    Map<FromExpression, List<ValueExpression>> getResultGrouping();
 
     List<PreparedQuery> getChainedQueries();
 

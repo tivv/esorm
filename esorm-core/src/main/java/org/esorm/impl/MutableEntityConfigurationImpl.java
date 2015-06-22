@@ -24,7 +24,7 @@ import org.esorm.EntityManager;
 import org.esorm.MutableEntityConfiguration;
 import org.esorm.entity.EntityProperty;
 import org.esorm.entity.db.Column;
-import org.esorm.entity.db.SelectExpression;
+import org.esorm.entity.db.FromExpression;
 import org.esorm.utils.IterableUtils;
 
 import java.util.ArrayList;
@@ -41,12 +41,12 @@ public class MutableEntityConfigurationImpl implements MutableEntityConfiguratio
     private EntityManager manager;
     private String location;
     private List<EntityProperty> properties;
-    private Map<SelectExpression, List<Column>> idColumns;
+    private Map<FromExpression, List<Column>> idColumns;
     private Map<String, ComplexProperty> complexProperties;
 
     public MutableEntityConfigurationImpl(String name) {
         this.name = name;
-        this.idColumns = new HashMap<SelectExpression, List<Column>>();
+        this.idColumns = new HashMap<FromExpression, List<Column>>();
         this.properties = new ArrayList<EntityProperty>();
         this.complexProperties = new HashMap<String, ComplexProperty>();
     }
@@ -57,8 +57,9 @@ public class MutableEntityConfigurationImpl implements MutableEntityConfiguratio
         this.location = parent.getLocation();
         properties = IterableUtils.copyToList(parent.getProperties());
         complexProperties = new HashMap<String, ComplexProperty>(parent.getComplexProperties());
-        idColumns = new HashMap<SelectExpression, List<Column>>();
-        for (Entry<SelectExpression, ? extends Iterable<Column>> e : parent.getIdColumns().entrySet()) {
+        idColumns = new HashMap<FromExpression, List<Column>>();
+        for (Entry<FromExpression, ? extends Iterable<Column>> e : parent.getIdColumns().entrySet())
+        {
             idColumns.put(e.getKey(), IterableUtils.copyToList(e.getValue()));
         }
 
@@ -97,7 +98,7 @@ public class MutableEntityConfigurationImpl implements MutableEntityConfiguratio
      * @see org.esorm.EntityConfiguration#getPrimaryKeys()
      */
 
-    public Map<SelectExpression, List<Column>> getIdColumns() {
+    public Map<FromExpression, List<Column>> getIdColumns() {
         return idColumns;
     }
 
@@ -105,7 +106,7 @@ public class MutableEntityConfigurationImpl implements MutableEntityConfiguratio
         return complexProperties;
     }
 
-    protected void setIdColumns(Map<SelectExpression, List<Column>> idColumns) {
+    protected void setIdColumns(Map<FromExpression, List<Column>> idColumns) {
         this.idColumns = idColumns;
     }
 
@@ -116,7 +117,7 @@ public class MutableEntityConfigurationImpl implements MutableEntityConfiguratio
     }
 
     public MutableEntityConfiguration addIdColumn(Column column) {
-        final SelectExpression table = column.getTable();
+        final FromExpression table = column.getTable();
         List<Column> expressionList = idColumns.get(table);
         if (expressionList == null) {
             expressionList = new ArrayList<Column>();

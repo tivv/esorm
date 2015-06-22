@@ -1,5 +1,5 @@
 /**
- * 
+ *
  * Copyright 2010 Vitalii Tymchyshyn
  * This file is part of EsORM.
  *
@@ -18,21 +18,19 @@
  */
 package org.esorm.entity.db;
 
-import java.io.IOException;
-import java.util.List;
 import java.util.Map;
 
 /**
  * @author Vitalii Tymchyshyn
- *
  */
-public interface ValueExpression
-{
-    Iterable<SelectExpression> getTables();
-    
-    void appendQuery(Appendable appendTo, Map<SelectExpression, String> tableNames);
+public interface ValueExpression {
+    Iterable<FromExpression> getTables();
+
+    void appendQuery(Appendable appendTo, Map<? extends FromExpression, ? extends FromExpressionQueryData> tableNames);
 
     boolean isInsertable();
+
     boolean isUpdateable();
+
     boolean isQueryable();
 }

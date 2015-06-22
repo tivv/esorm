@@ -21,9 +21,6 @@ package org.esorm.entity.db;
 /**
  * @author Vitalii Tymchyshyn
  */
-public interface Table extends FromExpression {
-    String getSchema();
-
-    String getName();
-
+public interface FromExpression {
+    void appendQuery(Appendable appendTo, String alias);
 }

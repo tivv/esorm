@@ -22,7 +22,7 @@ import org.esorm.EntityConfiguration;
 import org.esorm.PreparedQuery;
 import org.esorm.QueryIterator;
 import org.esorm.RegisteredExceptionWrapper;
-import org.esorm.entity.db.SelectExpression;
+import org.esorm.entity.db.FromExpression;
 import org.esorm.entity.db.ValueExpression;
 import org.esorm.impl.AQueryIterator;
 import org.esorm.impl.QueryCache;
@@ -71,7 +71,7 @@ public class PreparedFetchQuery<R> implements PreparedQuery<R> {
         return resultColumns;
     }
 
-    public Map<SelectExpression, List<ValueExpression>> getResultGrouping() {
+    public Map<FromExpression, List<ValueExpression>> getResultGrouping() {
         return Collections.emptyMap();
     }
 
@@ -85,11 +85,13 @@ public class PreparedFetchQuery<R> implements PreparedQuery<R> {
 
     public synchronized QueryIterator<R> iterator() {
         ensureStatement();
-        try {
+        try
+        {
             Object callState = parameterMapper.process(null, new PreparedStatementParameterSetter(statement), params);
             ResultSetQueryIterator<R> firstCallIterator = makeNewIterator();
             return callState == null ? firstCallIterator : new MultiCallIterator(callState, firstCallIterator, params);
-        } catch (SQLException e) {
+        } catch (SQLException e)
+        {
             throw new RegisteredExceptionWrapper(e);
         }
     }
@@ -114,10 +116,13 @@ public class PreparedFetchQuery<R> implements PreparedQuery<R> {
     }
 
     private void ensureStatement() {
-        if (statement == null) {
-            try {
+        if (statement == null)
+        {
+            try
+            {
                 statement = con.prepareStatement(query);
-            } catch (SQLException e) {
+            } catch (SQLException e)
+            {
                 throw new RegisteredExceptionWrapper(e);
             }
         }
@@ -127,7 +132,8 @@ public class PreparedFetchQuery<R> implements PreparedQuery<R> {
         if (parameterIndexes == null)
             throw new IllegalStateException("Query does not have named parameters");
         Object[] paramList = new Object[parameterIndexes.size()];
-        for (int i = 0; i < paramList.length; i++) {
+        for (int i = 0; i < paramList.length; i++)
+        {
             String paramName = parameterIndexes.get(i);
             Object val = params.get(paramName);
             if (val == null && !params.containsKey(paramName))
@@ -140,9 +146,11 @@ public class PreparedFetchQuery<R> implements PreparedQuery<R> {
 
 
     public void close() {
-        try {
+        try
+        {
             statement.close();
-        } catch (SQLException e) {
+        } catch (SQLException e)
+        {
             throw new RegisteredExceptionWrapper(e);
         }
     }
@@ -167,7 +175,8 @@ public class PreparedFetchQuery<R> implements PreparedQuery<R> {
         public boolean hasNext() {
             if (delegate == null)
                 return false;
-            while (!delegate.hasNext()) {
+            while (!delegate.hasNext())
+            {
                 delegate.close();
                 delegate = null;
                 if (callState == null)
@@ -178,11 +187,14 @@ public class PreparedFetchQuery<R> implements PreparedQuery<R> {
         }
 
         private void makeNewDelegate() {
-            synchronized (PreparedFetchQuery.this) {
+            synchronized (PreparedFetchQuery.this)
+            {
                 callState = parameterMapper.process(callState, new PreparedStatementParameterSetter(statement), params);
-                try {
+                try
+                {
                     delegate = makeNewIterator();
-                } catch (SQLException e) {
+                } catch (SQLException e)
+                {
                     throw new RegisteredExceptionWrapper(e);
                 }
             }
@@ -203,7 +215,8 @@ public class PreparedFetchQuery<R> implements PreparedQuery<R> {
 
         @Override
         public void close() {
-            if (delegate != null) {
+            if (delegate != null)
+            {
                 delegate.close();
                 delegate = null;
             }
