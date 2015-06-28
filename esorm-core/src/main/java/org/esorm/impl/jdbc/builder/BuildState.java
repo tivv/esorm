@@ -20,6 +20,7 @@ package org.esorm.impl.jdbc.builder;
 
 import org.esorm.entity.db.FromExpression;
 import org.esorm.entity.db.ValueExpression;
+import org.esorm.impl.db.PropertyFetcher;
 import org.esorm.impl.parameters.MultiParameterMapper;
 import org.esorm.impl.parameters.NoParameterMapper;
 import org.esorm.impl.parameters.TransformerParameterMapper;
@@ -35,9 +36,10 @@ import java.util.*;
 class BuildState implements Appendable {
     private int parametersWithoutMapper = 0;
     private final StringBuilder stringBuilder = new StringBuilder();
-    private List<ParameterMapper> mappers = new ArrayList<ParameterMapper>();
-    Map<FromExpression, TableSelectData> tablesInvolved = new LinkedHashMap<FromExpression, TableSelectData>();
-    Map<ValueExpression, Integer> resultColumns = new HashMap<ValueExpression, Integer>();
+    private final List<ParameterMapper> mappers = new ArrayList<ParameterMapper>();
+    private final Map<FromExpression, TableSelectData> tablesInvolved = new LinkedHashMap<FromExpression, TableSelectData>();
+    private final Map<ValueExpression, Integer> resultColumns = new HashMap<ValueExpression, Integer>();
+    private PropertyFetcher rootFetcher;
 
     public StringBuilder getStringBuilder() {
         return stringBuilder;
@@ -61,6 +63,14 @@ class BuildState implements Appendable {
             default:
                 return new MultiParameterMapper(mappers.toArray(new ParameterMapper[mappers.size()]));
         }
+    }
+
+    public PropertyFetcher getRootFetcher() {
+        return rootFetcher;
+    }
+
+    public void setRootFetcher(PropertyFetcher rootFetcher) {
+        this.rootFetcher = rootFetcher;
     }
 
     public BuildState appendParameter() {

@@ -24,6 +24,9 @@ import org.esorm.entity.db.Column;
 import org.esorm.entity.db.FromExpression;
 import org.esorm.entity.db.ValueExpression;
 import org.esorm.impl.db.ParsedFetchQuery;
+import org.esorm.impl.db.PropertyFetcher;
+import org.esorm.impl.db.SimplePropertyFetcher;
+import org.esorm.impl.db.SingleBeanPropertyFetcher;
 import org.esorm.impl.parameters.FixedValueParameterMapper;
 import org.esorm.impl.parameters.NopParameterTransformer;
 import org.esorm.impl.parameters.TransformerParameterMapper;
@@ -66,10 +69,9 @@ public class SQLQueryBuilder<R> implements QueryBuilder<R> {
 
     public ParsedQuery build() {
         BuildState buildState = new BuildState();
-        final Map<ValueExpression, Integer> resultColumns = buildState.getResultColumns();
         buildState.append("select ");
         addRootProperties(entity, buildState);
-        if (resultColumns.isEmpty())
+        if (buildState.getResultColumns().isEmpty())
             throw new IllegalArgumentException("Nothing to select for " + entity.getName());
         //TODO - complex primary key by id / name
         buildState.append(" from ");
@@ -80,20 +82,23 @@ public class SQLQueryBuilder<R> implements QueryBuilder<R> {
             filters.addQueryText(buildState);
         }
         return new ParsedFetchQuery(entity, buildState.getStringBuilder().toString(),
-                buildState.getParameterMapper(), resultColumns);
+                buildState.getParameterMapper(), buildState.getRootFetcher());
     }
 
     private void addRootProperties(EntityConfiguration entity, BuildState buildState) {
         //TODO: Selecting entities with optional columns only
-        addProperties(entity, buildState, null);
+        List<PropertyFetcher> propertyFetchers = getProperties(entity, buildState, null);
+        buildState.setRootFetcher(new SingleBeanPropertyFetcher(null, entity, propertyFetchers));
     }
 
-    private void addProperties(EntityConfiguration entity, BuildState buildState, Iterable<Column> joinToColumns) {
-        addSimpleProperties(entity, buildState, joinToColumns);
-        addComplexProperties(entity, buildState);
+    private List<PropertyFetcher> getProperties(EntityConfiguration entity, BuildState buildState, Iterable<Column> joinToColumns) {
+        List<PropertyFetcher> propertyFetchers = new ArrayList<PropertyFetcher>();
+        addSimpleProperties(entity, buildState, propertyFetchers, joinToColumns);
+        addComplexProperties(entity, buildState, propertyFetchers);
+        return propertyFetchers;
     }
 
-    private void addSimpleProperties(EntityConfiguration entity, BuildState buildState, Iterable<Column> joinToColumns) {
+    private void addSimpleProperties(EntityConfiguration entity, BuildState buildState, List<PropertyFetcher> propertyFetchers, Iterable<Column> joinToColumns) {
         StringBuilder query = buildState.getStringBuilder();
         Map<FromExpression, TableSelectData> tablesInvolved = buildState.getTablesInvolved();
         final Map<ValueExpression, Integer> resultColumns = buildState.getResultColumns();
@@ -101,9 +106,10 @@ public class SQLQueryBuilder<R> implements QueryBuilder<R> {
         for (EntityProperty property : properties)
         {
             ValueExpression expression = property.getExpression();
-            if (!resultColumns.containsKey(expression))
+            Integer num = resultColumns.get(expression);
+            if (num == null)
             {
-                int num = resultColumns.size() + 1;
+                num = resultColumns.size() + 1;
                 resultColumns.put(expression, num);
                 for (FromExpression table : expression.getTables())
                 {
@@ -114,7 +120,6 @@ public class SQLQueryBuilder<R> implements QueryBuilder<R> {
                         if (tablesInvolved.isEmpty())
                         {
                             tableSelectData = new TableSelectData("t" + tableNum);
-                            FromExpression joinTo = table;
                             joinToColumns = entity.getIdColumns().get(table);
                         } else
                         {
@@ -132,10 +137,11 @@ public class SQLQueryBuilder<R> implements QueryBuilder<R> {
                     query.append(',');
                 expression.appendQuery(query, tablesInvolved);
             }
+            propertyFetchers.add(new SimplePropertyFetcher(property.getName(), num));
         }
     }
 
-    private void addComplexProperties(EntityConfiguration entity, BuildState buildState) {
+    private void addComplexProperties(EntityConfiguration entity, BuildState buildState, List<PropertyFetcher> propertyFetchers) {
         for (Map.Entry<String, ComplexProperty> entry : entity.getComplexProperties().entrySet())
         {
             ComplexProperty property = entry.getValue();
@@ -150,7 +156,9 @@ public class SQLQueryBuilder<R> implements QueryBuilder<R> {
                         throw new UnsupportedOperationException("Collections are not supported yet");
                     } else
                     {
-                        addProperties(property.getConfiguration(queryRunner), buildState, property.getJoinToColumns());
+                        EntityConfiguration childEntity = property.getConfiguration(queryRunner);
+                        propertyFetchers.add(new SingleBeanPropertyFetcher(entry.getKey(), childEntity,
+                                getProperties(childEntity, buildState, property.getJoinToColumns())));
                     }
                     break;
                 case Select:

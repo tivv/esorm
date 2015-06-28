@@ -21,7 +21,6 @@ package org.esorm.impl.db;
 import org.esorm.EntityConfiguration;
 import org.esorm.ParsedQuery;
 import org.esorm.PreparedQuery;
-import org.esorm.entity.db.ValueExpression;
 import org.esorm.impl.QueryCache;
 import org.esorm.parameters.ParameterMapper;
 
@@ -37,19 +36,19 @@ import static org.esorm.utils.AssertUtils.argNotNull;
 public class ParsedFetchQuery implements ParsedQuery {
     private final EntityConfiguration configuration;
     private final String query;
-    private final Map<ValueExpression, Integer> resultColumns;
+    private final PropertyFetcher rootFetcher;
     private final List<String> parameterIndexes;
     private final ParameterMapper parameterMapper;
 
-    public ParsedFetchQuery(EntityConfiguration configuration, String query, ParameterMapper parameterMapper, Map<ValueExpression, Integer> resultColumns) {
-        this(configuration, query, parameterMapper, resultColumns, null);
+    public ParsedFetchQuery(EntityConfiguration configuration, String query, ParameterMapper parameterMapper, PropertyFetcher rootFetcher) {
+        this(configuration, query, parameterMapper, rootFetcher, null);
     }
 
-    public ParsedFetchQuery(EntityConfiguration configuration, String query, ParameterMapper parameterMapper, Map<ValueExpression, Integer> resultColumns, List<String> parameterIndexes) {
+    public ParsedFetchQuery(EntityConfiguration configuration, String query, ParameterMapper parameterMapper, PropertyFetcher rootFetcher, List<String> parameterIndexes) {
         argNotNull(parameterMapper, "Parameter mapper must not be null");
         this.configuration = configuration;
         this.query = query;
-        this.resultColumns = resultColumns;
+        this.rootFetcher = rootFetcher;
         this.parameterIndexes = parameterIndexes;
         this.parameterMapper = parameterMapper;
     }
@@ -63,7 +62,8 @@ public class ParsedFetchQuery implements ParsedQuery {
     }
 
     public <R> PreparedQuery<R> prepare(Connection con) {
-        return new PreparedFetchQuery<R>(con, new QueryCache(), configuration, query, parameterMapper, resultColumns, parameterIndexes);
+        //noinspection unchecked
+        return new PreparedFetchQuery<R>(con, new QueryCache(), configuration, query, parameterMapper, rootFetcher, parameterIndexes);
     }
 
     public <R> PreparedQuery<R> prepare(Connection con, Object... params) {

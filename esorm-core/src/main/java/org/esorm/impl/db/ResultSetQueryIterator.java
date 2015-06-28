@@ -18,37 +18,30 @@
  */
 package org.esorm.impl.db;
 
-import org.esorm.EntityBuilder;
-import org.esorm.EntityConfiguration;
 import org.esorm.RegisteredExceptionWrapper;
-import org.esorm.entity.EntityProperty;
-import org.esorm.entity.db.ValueExpression;
 import org.esorm.impl.AQueryIterator;
 import org.esorm.impl.QueryCache;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
-import java.util.Map;
 import java.util.NoSuchElementException;
 
 /**
  * @author Vitalii Tymchyshyn
  */
 public class ResultSetQueryIterator<E> extends AQueryIterator<E> {
-    private final EntityConfiguration configuration;
     private final ResultSet resultSet;
-    private final Map<ValueExpression, Integer> resultColumns;
+    private final PropertyFetcher<E> rootFetcher;
     private PreparedFetchQuery<E> fetchQuery;
     private final QueryCache queryCache;
     private boolean closed;
 
-    public ResultSetQueryIterator(PreparedFetchQuery<E> fetchQuery, QueryCache queryCache, EntityConfiguration configuration, ResultSet resultSet, Map<ValueExpression, Integer> resultColumns) {
+    public ResultSetQueryIterator(PreparedFetchQuery<E> fetchQuery, QueryCache queryCache, ResultSet resultSet, PropertyFetcher<E> rootFetcher) {
         this.fetchQuery = fetchQuery;
         this.queryCache = queryCache;
-        this.configuration = configuration;
         this.resultSet = resultSet;
-        this.resultColumns = resultColumns;
+        this.rootFetcher = rootFetcher;
     }
 
     public boolean hasNext() {
@@ -76,13 +69,7 @@ public class ResultSetQueryIterator<E> extends AQueryIterator<E> {
                 resultSet.close();
                 throw new NoSuchElementException();
             }
-            EntityBuilder<E> entityBuilder = configuration.getManager().makeBuilder();
-            entityBuilder.prepare();
-            for (EntityProperty property : configuration.getProperties()) {
-                entityBuilder.setProperty(property.getName(),
-                        resultSet.getObject(resultColumns.get(property.getExpression())));
-            }
-            return entityBuilder.build();
+            return rootFetcher.getPropertyValue(resultSet);
         } catch (SQLException e) {
             throw new RegisteredExceptionWrapper(e);
         }

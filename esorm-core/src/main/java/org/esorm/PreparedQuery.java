@@ -29,7 +29,6 @@ import java.util.Map;
  * @author Vitalii Tymchyshyn
  */
 public interface PreparedQuery<R> extends Iterable<R>, Closeable {
-    Map<ValueExpression, Integer> getResultMapping();
 
     /**
      * @return map from each level (defined by table) to list or columns that group multiple result set records into

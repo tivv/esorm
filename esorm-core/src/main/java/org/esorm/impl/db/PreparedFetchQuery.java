@@ -49,26 +49,22 @@ public class PreparedFetchQuery<R> implements PreparedQuery<R> {
     private final Connection con;
     private final String query;
     private final ParameterMapper parameterMapper;
-    private final Map<ValueExpression, Integer> resultColumns;
+    private final PropertyFetcher<R> rootFetcher;
     private final EntityConfiguration configuration;
     private final List<String> parameterIndexes;
     private final QueryCache queryCache;
     private PreparedStatement statement;
     private Object[] params;
 
-    public PreparedFetchQuery(Connection con, QueryCache queryCache, EntityConfiguration configuration, String query, ParameterMapper parameterMapper, Map<ValueExpression, Integer> resultColumns, List<String> parameterIndexes) {
+    public PreparedFetchQuery(Connection con, QueryCache queryCache, EntityConfiguration configuration, String query, ParameterMapper parameterMapper, PropertyFetcher<R> rootFetcher, List<String> parameterIndexes) {
         argNotNull(parameterMapper, "Parameter mapper must not be null");
         this.con = con;
         this.queryCache = queryCache;
         this.query = query;
         this.parameterMapper = parameterMapper;
-        this.resultColumns = resultColumns;
+        this.rootFetcher = rootFetcher;
         this.configuration = configuration;
         this.parameterIndexes = parameterIndexes;
-    }
-
-    public Map<ValueExpression, Integer> getResultMapping() {
-        return resultColumns;
     }
 
     public Map<FromExpression, List<ValueExpression>> getResultGrouping() {
@@ -98,7 +94,7 @@ public class PreparedFetchQuery<R> implements PreparedQuery<R> {
 
     private ResultSetQueryIterator<R> makeNewIterator() throws SQLException {
         LOG.log(Level.INFO, "Executing " + query);
-        return new ResultSetQueryIterator<R>(this, queryCache, configuration, statement.executeQuery(), resultColumns);
+        return new ResultSetQueryIterator<R>(this, queryCache, statement.executeQuery(), rootFetcher);
     }
 
     public QueryIterator<R> iterator(Object... params) {
