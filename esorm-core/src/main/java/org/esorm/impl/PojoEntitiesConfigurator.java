@@ -27,6 +27,9 @@ import org.esorm.utils.PojoUtils;
 import org.jcloudlet.bean.Property;
 import org.jcloudlet.bean.impl.PropertySelectorImpl;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * @author Vitalii Tymchyshyn
  */
@@ -47,7 +50,7 @@ public class PojoEntitiesConfigurator
      */
 
     /**
-     * @deprecated Use {@link #resolveConfiguration(String,Iterable<String>,boolean)} instead
+     * @deprecated Use {@link #resolveConfiguration(String, Iterable<String>,boolean)} instead
      */
     public LazyManagedEntityConfiguration resolveConfiguration(String name,
                                                                Iterable<String> configurationLocations) {
@@ -65,15 +68,31 @@ public class PojoEntitiesConfigurator
             return null;
         LazyManagedEntityConfigurationImpl rc = new LazyManagedEntityConfigurationImpl(name);
         Table table = new TableImpl(name);
-        for (Property property : new PropertySelectorImpl(entityClass).select()) {
-            if (PojoUtils.isSimpleClass(property.type())) {
+        List<Property> complexProperties = null;
+        for (Property property : new PropertySelectorImpl(entityClass).select())
+        {
+            if (PojoUtils.isSimpleClass(property.type()))
+            {
                 final EntityPropertyImpl entityProperty = new EntityPropertyImpl(property.name(), new ColumnImpl(table, property.name()));
                 rc.getProperties().add(entityProperty);
-                if (idPropertyName.equals(property.name())) {
+                if (idPropertyName.equals(property.name()))
+                {
                     rc.addIdProperty(entityProperty);
                 }
-            } else {
-                PlainComplexPropertyImpl plainComplexProperty = new PlainComplexPropertyImpl(property.itemType(), null);
+            } else
+            {
+                if (complexProperties == null)
+                {
+                    complexProperties = new ArrayList<Property>();
+                }
+                complexProperties.add(property);
+            }
+        }
+        if (complexProperties != null)
+        {
+            for (Property property : complexProperties)
+            {
+                PlainComplexPropertyImpl plainComplexProperty = new PlainComplexPropertyImpl(property.itemType(), null, rc.getIdColumns().get(table));
                 rc.getComplexProperties().put(property.name(), plainComplexProperty);
             }
         }

@@ -19,6 +19,7 @@
 package org.esorm;
 
 import org.esorm.ann.FirstIsDefault;
+import org.esorm.entity.db.Column;
 
 /**
  * @author Vitalii Tymchyshyn
@@ -30,6 +31,8 @@ public interface ComplexProperty {
     }
 
     boolean isCollection();
+
+    Iterable<Column> getJoinToColumns();
 
     EntityConfiguration getConfiguration(QueryRunner runner);
 

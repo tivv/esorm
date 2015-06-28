@@ -21,6 +21,7 @@ package org.esorm.impl;
 import org.esorm.ComplexProperty;
 import org.esorm.EntityConfiguration;
 import org.esorm.QueryRunner;
+import org.esorm.entity.db.Column;
 
 /**
  * @author Vitalii Tymchyshyn
@@ -28,14 +29,21 @@ import org.esorm.QueryRunner;
 public class PlainComplexPropertyImpl implements ComplexProperty {
     private final Class<?> propertyClass;
     private final FetchType fetchType;
+    private final Iterable<Column> joinToColumns;
 
-    public PlainComplexPropertyImpl(Class<?> propertyClass, FetchType fetchType) {
+    public PlainComplexPropertyImpl(Class<?> propertyClass, FetchType fetchType, Iterable<Column> joinToColumns) {
         this.propertyClass = propertyClass;
         this.fetchType = fetchType;
+        this.joinToColumns = joinToColumns;
     }
 
     public boolean isCollection() {
         return false;
+    }
+
+    @Override
+    public Iterable<Column> getJoinToColumns() {
+        return joinToColumns;
     }
 
     public EntityConfiguration getConfiguration(QueryRunner runner) {

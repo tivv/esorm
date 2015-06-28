@@ -9,13 +9,11 @@
 package org.esorm.impl.jdbc.builder;
 
 import org.esorm.entity.db.Column;
-import org.esorm.entity.db.FromExpression;
 import org.esorm.entity.db.FromExpressionQueryData;
 
 class TableSelectData implements FromExpressionQueryData {
     private String alias;
     private String joinType;
-    private FromExpression joinTo;
     private Iterable<Column> joinColumns;
     private Iterable<Column> joinToColumns;
 
@@ -23,10 +21,9 @@ class TableSelectData implements FromExpressionQueryData {
         this.alias = alias;
     }
 
-    TableSelectData(String alias, String joinType, FromExpression joinTo, Iterable<Column> joinColumns, Iterable<Column> joinToColumns) {
+    TableSelectData(String alias, String joinType, Iterable<Column> joinColumns, Iterable<Column> joinToColumns) {
         this.alias = alias;
         this.joinType = joinType;
-        this.joinTo = joinTo;
         this.joinColumns = joinColumns;
         this.joinToColumns = joinToColumns;
     }
@@ -38,10 +35,6 @@ class TableSelectData implements FromExpressionQueryData {
 
     public String getJoinType() {
         return joinType;
-    }
-
-    public FromExpression getJoinTo() {
-        return joinTo;
     }
 
     public Iterable<Column> getJoinColumns() {

@@ -52,7 +52,8 @@ public class SQLQueryBuilder<R> implements QueryBuilder<R> {
     }
 
     public QueryBuilder<R> select(EntityConfiguration configuration) {
-        if (entity != null) {
+        if (entity != null)
+        {
             throw new IllegalStateException("Entity is already set in this query");
         }
         this.entity = configuration;
@@ -84,40 +85,42 @@ public class SQLQueryBuilder<R> implements QueryBuilder<R> {
 
     private void addRootProperties(EntityConfiguration entity, BuildState buildState) {
         //TODO: Selecting entities with optional columns only
-        addProperties(entity, buildState, null, null);
+        addProperties(entity, buildState, null);
     }
 
-    private void addProperties(EntityConfiguration entity, BuildState buildState, FromExpression joinTo, Iterable<Column> joinToColumns) {
-        addSimpleProperties(entity, buildState, joinTo, joinToColumns);
+    private void addProperties(EntityConfiguration entity, BuildState buildState, Iterable<Column> joinToColumns) {
+        addSimpleProperties(entity, buildState, joinToColumns);
         addComplexProperties(entity, buildState);
     }
 
-    private void addSimpleProperties(EntityConfiguration entity, BuildState buildState, FromExpression joinTo, Iterable<Column> joinToColumns) {
+    private void addSimpleProperties(EntityConfiguration entity, BuildState buildState, Iterable<Column> joinToColumns) {
         StringBuilder query = buildState.getStringBuilder();
         Map<FromExpression, TableSelectData> tablesInvolved = buildState.getTablesInvolved();
         final Map<ValueExpression, Integer> resultColumns = buildState.getResultColumns();
         Iterable<EntityProperty> properties = entity.getProperties();
-        for (EntityProperty property : properties) {
+        for (EntityProperty property : properties)
+        {
             ValueExpression expression = property.getExpression();
-            if (!resultColumns.containsKey(expression)) {
+            if (!resultColumns.containsKey(expression))
+            {
                 int num = resultColumns.size() + 1;
                 resultColumns.put(expression, num);
                 for (FromExpression table : expression.getTables())
                 {
-                    if (!tablesInvolved.containsKey(table)) {
+                    if (!tablesInvolved.containsKey(table))
+                    {
                         int tableNum = tablesInvolved.size() + 1;
                         TableSelectData tableSelectData;
                         if (tablesInvolved.isEmpty())
                         {
                             tableSelectData = new TableSelectData("t" + tableNum);
-                            joinTo = table;
+                            FromExpression joinTo = table;
                             joinToColumns = entity.getIdColumns().get(table);
                         } else
                         {
                             tableSelectData = new TableSelectData(
                                     "t" + tableNum,
                                     "inner",
-                                    joinTo,
                                     entity.getIdColumns().get(table),
                                     joinToColumns
                             );
@@ -147,7 +150,7 @@ public class SQLQueryBuilder<R> implements QueryBuilder<R> {
                         throw new UnsupportedOperationException("Collections are not supported yet");
                     } else
                     {
-                        addRootProperties(property.getConfiguration(queryRunner), buildState);
+                        addProperties(property.getConfiguration(queryRunner), buildState, property.getJoinToColumns());
                     }
                     break;
                 case Select:
@@ -160,24 +163,21 @@ public class SQLQueryBuilder<R> implements QueryBuilder<R> {
     private void addFromList(BuildState buildState) {
         Map<FromExpression, TableSelectData> tablesInvolved = buildState.getTablesInvolved();
         StringBuilder query = buildState.getStringBuilder();
-        Iterable<Column> firstTablePK = null;
         Map<FromExpression, ? extends Iterable<Column>> primaryKeys = entity.getIdColumns();
         for (Map.Entry<FromExpression, TableSelectData> e : tablesInvolved.entrySet())
         {
-            if (firstTablePK != null)
-                query.append(" join ");
+            if (e.getValue().getJoinType() != null)
+                query.append(' ').append(e.getValue().getJoinType()).append(" join ");
             e.getKey().appendQuery(query, e.getValue().getAlias());
-            Iterable<Column> primaryKey = primaryKeys.get(e.getKey());
-            if (primaryKey == null && tablesInvolved.size() > 1)
-                throw new IllegalStateException("Table " + e.getKey() + " does not have primary key specified");
-            if (firstTablePK == null) {
-                firstTablePK = primaryKey;
-            } else {
-                Iterator<Column> primaryKeyIterator = primaryKey.iterator();
+            if (e.getValue().getJoinType() != null)
+            {
+                Iterable<Column> joinToColumns = e.getValue().getJoinToColumns();
+                Iterator<Column> joinToIterator = joinToColumns.iterator();
                 String toAppend = " on ";
-                for (Column firstColumn : firstTablePK) {
+                for (Column firstColumn : e.getValue().getJoinColumns())
+                {
                     //TODO add .hasNext check
-                    Column secondColumn = primaryKeyIterator.next();
+                    Column secondColumn = joinToIterator.next();
                     query.append(toAppend);
                     toAppend = " and ";
                     firstColumn.appendQuery(query, tablesInvolved);
@@ -244,8 +244,10 @@ public class SQLQueryBuilder<R> implements QueryBuilder<R> {
 
         public void addQueryText(BuildState builder) {
             boolean first = true;
-            for (SQLQueryFilter filter : filters) {
-                if (!first) {
+            for (SQLQueryFilter filter : filters)
+            {
+                if (!first)
+                {
                     builder.append(' ').append(operation).append(' ');
                 }
                 builder.append('(');
@@ -258,7 +260,8 @@ public class SQLQueryBuilder<R> implements QueryBuilder<R> {
         }
 
         public boolean prepare() {
-            for (Iterator<SQLQueryFilter> iterator = filters.iterator(); iterator.hasNext(); ) {
+            for (Iterator<SQLQueryFilter> iterator = filters.iterator(); iterator.hasNext(); )
+            {
                 SQLQueryFilter filter = iterator.next();
                 if (!filter.prepare())
                     iterator.remove();
@@ -391,10 +394,13 @@ public class SQLQueryBuilder<R> implements QueryBuilder<R> {
             builder.appendParameter(new ParameterMapper<Iterator>() {
                 @Override
                 public Iterator process(Iterator state, ParameterSetter setter, Object... inputValues) {
-                    if (state == null) {
+                    if (state == null)
+                    {
                         state = values.iterator();
-                        if (!state.hasNext()) {
-                            for (int i = 0; i < blockSize; i++) {
+                        if (!state.hasNext())
+                        {
+                            for (int i = 0; i < blockSize; i++)
+                            {
                                 setter.setParameter(i + firstParam, null);
                             }
                             return null;
@@ -402,13 +408,15 @@ public class SQLQueryBuilder<R> implements QueryBuilder<R> {
                     }
                     Object firstVal = state.next();
                     setter.setParameter(firstParam, firstVal);
-                    for (int i = 1; i < blockSize; i++) {
+                    for (int i = 1; i < blockSize; i++)
+                    {
                         setter.setParameter(i + firstParam, state.hasNext() ? state.next() : firstVal);
                     }
                     return state.hasNext() ? state : null;
                 }
             });
-            for (int i = 1; i < blockSize; i++) {
+            for (int i = 1; i < blockSize; i++)
+            {
                 builder.append(',').appendParameter();
             }
             builder.append(')');
@@ -493,8 +501,10 @@ public class SQLQueryBuilder<R> implements QueryBuilder<R> {
         }
 
         public R value(Object value) {
-            if (value == null) {
-                if ("=".equals(operation)) {
+            if (value == null)
+            {
+                if ("=".equals(operation))
+                {
                     setRightValue(NullSQLValue.INSTANCE);
                     operation = " is ";
                     return ret;

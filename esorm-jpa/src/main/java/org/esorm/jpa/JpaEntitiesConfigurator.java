@@ -89,6 +89,7 @@ public class JpaEntitiesConfigurator
                                                               Map<String, ComplexProperty> complexProperties) {
         SimplePropertyBuilder defaultIdProperty = null;
         Map<String, SimplePropertyBuilder> idProperties = null;
+        List<Property> complexPropertiesList = null;
         for (Property property : new PropertySelectorImpl(entityClass).ignore(Transient.class).select()) {
             if (property.field() != null && Modifier.isTransient(property.field().getModifiers()))
                 continue;
@@ -114,11 +115,39 @@ public class JpaEntitiesConfigurator
                     defaultIdProperty = simplePropertyBuilder;
                 }
             } else {
-                complexProperties.put(property.name(), new PlainComplexPropertyImpl(property.type(), null));
+                if (complexPropertiesList == null)
+                {
+                    complexPropertiesList = new ArrayList<Property>();
+                }
+                complexPropertiesList.add(property);
             }
         }
         if (idProperties == null && defaultIdProperty != null)
             idProperties = Collections.singletonMap(defaultIdProperty.getColumn().getName(), defaultIdProperty);
+        if (complexPropertiesList != null)
+        {
+            for (Property property : complexPropertiesList)
+            {
+                JoinColumn joinColumn = property.annotation(JoinColumn.class);
+                List<Column> joinToColumns;
+                if (joinColumn != null && !"".equals(joinColumn.name()))
+                {
+                    joinToColumns = Collections.<Column>singletonList(new ColumnImpl(primaryTable, joinColumn.name()));
+                } else
+                {
+                    if (idProperties == null)
+                    {
+                        throw new IllegalStateException("Can't create a join for " + property + " without an explicit @JoinColumn or a primary key");
+                    }
+                    joinToColumns = new ArrayList<Column>(idProperties.size());
+                    for (SimplePropertyBuilder idProperty : idProperties.values())
+                    {
+                        joinToColumns.add(idProperty.getColumn());
+                    }
+                }
+                complexProperties.put(property.name(), new PlainComplexPropertyImpl(property.type(), null, joinToColumns));
+            }
+        }
         return idProperties;
     }
 
